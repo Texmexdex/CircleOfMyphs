@@ -733,6 +733,42 @@
             font-weight: bold;
             text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
         }
+
+        .control-group input[type="range"] {
+            width: 80px;
+            height: 5px;
+            border-radius: 5px;
+            background: #4a4a6e;
+            outline: none;
+            -webkit-appearance: none;
+            margin: 5px 0;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #00bcd4;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #00bcd4;
+            cursor: pointer;
+            border: none;
+        }
+
+        .control-group span {
+            font-size: 0.8em;
+            color: #b0b0d0;
+            min-width: 50px;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -794,6 +830,87 @@
             </div>
             <div class="control-group">
                 <button id="reset-button" class="reset-button">Reset All</button>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <h3 style="color: #00e5ff; margin: 0 0 15px 0; width: 100%; text-align: center;">Audio Effects</h3>
+
+            <div class="control-group">
+                <label>Attack</label>
+                <input type="range" id="attack-slider" min="0" max="2" step="0.01" value="0.1">
+                <span id="attack-display">0.1s</span>
+            </div>
+
+            <div class="control-group">
+                <label>Decay</label>
+                <input type="range" id="decay-slider" min="0" max="5" step="0.01" value="1">
+                <span id="decay-display">1.0s</span>
+            </div>
+
+            <div class="control-group">
+                <label>Sustain</label>
+                <input type="range" id="sustain-slider" min="0" max="1" step="0.01" value="0.7">
+                <span id="sustain-display">0.7</span>
+            </div>
+
+            <div class="control-group">
+                <label>Release</label>
+                <input type="range" id="release-slider" min="0" max="5" step="0.01" value="0.5">
+                <span id="release-display">0.5s</span>
+            </div>
+
+            <div class="control-group">
+                <label>Reverb</label>
+                <input type="range" id="reverb-slider" min="0" max="1" step="0.01" value="0">
+                <span id="reverb-display">0%</span>
+            </div>
+
+            <div class="control-group">
+                <label>Delay</label>
+                <input type="range" id="delay-slider" min="0" max="1" step="0.01" value="0">
+                <span id="delay-display">0%</span>
+            </div>
+
+            <div class="control-group">
+                <label>Delay Time</label>
+                <input type="range" id="delay-time-slider" min="0.1" max="1" step="0.01" value="0.3">
+                <span id="delay-time-display">0.3s</span>
+            </div>
+
+            <div class="control-group">
+                <label>Feedback</label>
+                <input type="range" id="feedback-slider" min="0" max="0.9" step="0.01" value="0.3">
+                <span id="feedback-display">30%</span>
+            </div>
+
+            <div class="control-group">
+                <label>Filter</label>
+                <select id="filter-type">
+                    <option value="none">None</option>
+                    <option value="lowpass">Low Pass</option>
+                    <option value="highpass">High Pass</option>
+                    <option value="bandpass">Band Pass</option>
+                    <option value="notch">Notch</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Cutoff</label>
+                <input type="range" id="cutoff-slider" min="100" max="8000" step="10" value="2000">
+                <span id="cutoff-display">2000Hz</span>
+            </div>
+
+            <div class="control-group">
+                <label>Resonance</label>
+                <input type="range" id="resonance-slider" min="0.1" max="30" step="0.1" value="1">
+                <span id="resonance-display">1.0</span>
+            </div>
+
+            <div class="control-group">
+                <label>Distortion</label>
+                <input type="range" id="distortion-slider" min="0" max="100" step="1" value="0">
+                <span id="distortion-display">0</span>
             </div>
         </div>
 
@@ -1377,6 +1494,28 @@
         let audioContext;
         let currentCircleType = '12-tone';
         let currentDisplayMode = 'sharps';
+
+        // Audio Effects Variables
+        let masterGain;
+        let reverbNode;
+        let delayNode;
+        let feedbackGain;
+        let filterNode;
+        let distortionNode;
+        let effectsSettings = {
+            attack: 0.1,
+            decay: 1.0,
+            sustain: 0.7,
+            release: 0.5,
+            reverb: 0,
+            delay: 0,
+            delayTime: 0.3,
+            feedback: 0.3,
+            filterType: 'none',
+            cutoff: 2000,
+            resonance: 1,
+            distortion: 0
+        };
         let currentKeyMode = 'major';
         let currentInstrument = 'sine';
         let currentNoteData = noteData12;
@@ -1408,8 +1547,76 @@
         function getAudioContext() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                setupEffectsChain();
             }
             return audioContext;
+        }
+
+        function setupEffectsChain() {
+            const ctx = audioContext;
+
+            // Create master gain
+            masterGain = ctx.createGain();
+            masterGain.gain.value = 0.7;
+
+            // Create filter
+            filterNode = ctx.createBiquadFilter();
+            filterNode.type = 'lowpass';
+            filterNode.frequency.value = effectsSettings.cutoff;
+            filterNode.Q.value = effectsSettings.resonance;
+
+            // Create distortion using waveshaper
+            distortionNode = ctx.createWaveShaper();
+            distortionNode.curve = makeDistortionCurve(effectsSettings.distortion);
+            distortionNode.oversample = '4x';
+
+            // Create delay
+            delayNode = ctx.createDelay(1.0);
+            delayNode.delayTime.value = effectsSettings.delayTime;
+
+            feedbackGain = ctx.createGain();
+            feedbackGain.gain.value = effectsSettings.feedback;
+
+            // Create reverb using convolver
+            reverbNode = ctx.createConvolver();
+            createReverbImpulse();
+
+            // Connect effects chain: filter -> distortion -> delay -> reverb -> master -> destination
+            filterNode.connect(distortionNode);
+            distortionNode.connect(delayNode);
+            delayNode.connect(feedbackGain);
+            feedbackGain.connect(delayNode);
+            delayNode.connect(reverbNode);
+            reverbNode.connect(masterGain);
+            masterGain.connect(ctx.destination);
+        }
+
+        function makeDistortionCurve(amount) {
+            const samples = 44100;
+            const curve = new Float32Array(samples);
+            const deg = Math.PI / 180;
+
+            for (let i = 0; i < samples; i++) {
+                const x = (i * 2) / samples - 1;
+                curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
+            }
+
+            return curve;
+        }
+
+        function createReverbImpulse() {
+            const ctx = audioContext;
+            const length = ctx.sampleRate * 2; // 2 seconds
+            const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
+
+            for (let channel = 0; channel < 2; channel++) {
+                const channelData = impulse.getChannelData(channel);
+                for (let i = 0; i < length; i++) {
+                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+                }
+            }
+
+            reverbNode.buffer = impulse;
         }
 
         function calculateNotePositions(circleType) {
@@ -1897,48 +2104,78 @@
             const context = getAudioContext();
             const now = context.currentTime;
 
-            const mainGain = context.createGain();
-            mainGain.gain.setValueAtTime(0, now);
-            mainGain.gain.linearRampToValueAtTime(0.25, now + 0.05);
+            // Create ADSR envelope
+            const adsrGain = context.createGain();
+            adsrGain.gain.setValueAtTime(0, now);
 
-            const filter = context.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(3000, now);
-            filter.Q.setValueAtTime(1, now);
+            // Attack
+            adsrGain.gain.linearRampToValueAtTime(1, now + effectsSettings.attack);
+
+            // Decay to Sustain
+            adsrGain.gain.exponentialRampToValueAtTime(effectsSettings.sustain, now + effectsSettings.attack + effectsSettings.decay);
 
             const instrument = createInstrumentSound(context, freq, currentInstrument);
 
+            // Create dry/wet mix for effects
+            const dryGain = context.createGain();
+            const wetGain = context.createGain();
+
+            dryGain.gain.value = 1 - (effectsSettings.reverb + effectsSettings.delay) * 0.5;
+            wetGain.gain.value = (effectsSettings.reverb + effectsSettings.delay) * 0.5;
+
             if (instrument.oscillators) {
                 const instrumentGain = context.createGain();
-                instrumentGain.gain.setValueAtTime(0.8, now);
+                instrumentGain.gain.setValueAtTime(0.3, now);
 
                 instrument.gains.forEach(gain => {
                     gain.connect(instrumentGain);
                 });
 
-                instrumentGain.connect(filter);
-                filter.connect(mainGain);
-                mainGain.connect(context.destination);
+                instrumentGain.connect(adsrGain);
+
+                // Connect to both dry and wet paths
+                adsrGain.connect(dryGain);
+                adsrGain.connect(wetGain);
+
+                // Dry path goes directly to master
+                dryGain.connect(masterGain);
+
+                // Wet path goes through effects chain
+                if (effectsSettings.filterType !== 'none') {
+                    wetGain.connect(filterNode);
+                } else {
+                    wetGain.connect(distortionNode);
+                }
 
                 instrument.oscillators.forEach(osc => osc.start(now));
 
                 activeOscillators.set(noteName, {
                     oscillators: instrument.oscillators,
-                    gains: [...instrument.gains, instrumentGain, mainGain]
+                    gains: [...instrument.gains, instrumentGain, adsrGain, dryGain, wetGain],
+                    adsrGain: adsrGain
                 });
             } else {
-                instrument.connect(filter);
-                filter.connect(mainGain);
-                mainGain.connect(context.destination);
+                instrument.connect(adsrGain);
 
-                if (currentInstrument === 'pluck') {
-                    mainGain.gain.exponentialRampToValueAtTime(0.01, now + 2);
+                // Connect to both dry and wet paths
+                adsrGain.connect(dryGain);
+                adsrGain.connect(wetGain);
+
+                // Dry path goes directly to master
+                dryGain.connect(masterGain);
+
+                // Wet path goes through effects chain
+                if (effectsSettings.filterType !== 'none') {
+                    wetGain.connect(filterNode);
+                } else {
+                    wetGain.connect(distortionNode);
                 }
 
                 instrument.start(now);
                 activeOscillators.set(noteName, {
                     oscillators: [instrument],
-                    gains: [mainGain]
+                    gains: [adsrGain, dryGain, wetGain],
+                    adsrGain: adsrGain
                 });
             }
         }
@@ -1949,11 +2186,12 @@
                 const context = getAudioContext();
                 const now = context.currentTime;
 
-                instrument.gains.forEach(gain => {
-                    if (gain.gain) {
-                        gain.gain.linearRampToValueAtTime(0, now + 0.1);
-                    }
-                });
+                // Apply release phase of ADSR envelope
+                if (instrument.adsrGain) {
+                    instrument.adsrGain.gain.cancelScheduledValues(now);
+                    instrument.adsrGain.gain.setValueAtTime(instrument.adsrGain.gain.value, now);
+                    instrument.adsrGain.gain.exponentialRampToValueAtTime(0.001, now + effectsSettings.release);
+                }
 
                 setTimeout(() => {
                     instrument.oscillators.forEach(osc => {
@@ -1962,7 +2200,7 @@
                     instrument.gains.forEach(gain => {
                         try { gain.disconnect(); } catch (e) { }
                     });
-                }, 150);
+                }, effectsSettings.release * 1000 + 50);
 
                 activeOscillators.delete(noteName);
             }
@@ -3492,6 +3730,91 @@
             currentQuantize = quantizeSelect.value;
         }
 
+        // Effects Handler Functions
+        function handleAttackChange() {
+            effectsSettings.attack = parseFloat(document.getElementById('attack-slider').value);
+            document.getElementById('attack-display').textContent = effectsSettings.attack.toFixed(2) + 's';
+        }
+
+        function handleDecayChange() {
+            effectsSettings.decay = parseFloat(document.getElementById('decay-slider').value);
+            document.getElementById('decay-display').textContent = effectsSettings.decay.toFixed(2) + 's';
+        }
+
+        function handleSustainChange() {
+            effectsSettings.sustain = parseFloat(document.getElementById('sustain-slider').value);
+            document.getElementById('sustain-display').textContent = effectsSettings.sustain.toFixed(2);
+        }
+
+        function handleReleaseChange() {
+            effectsSettings.release = parseFloat(document.getElementById('release-slider').value);
+            document.getElementById('release-display').textContent = effectsSettings.release.toFixed(2) + 's';
+        }
+
+        function handleReverbChange() {
+            effectsSettings.reverb = parseFloat(document.getElementById('reverb-slider').value);
+            document.getElementById('reverb-display').textContent = Math.round(effectsSettings.reverb * 100) + '%';
+            updateEffectsMix();
+        }
+
+        function handleDelayChange() {
+            effectsSettings.delay = parseFloat(document.getElementById('delay-slider').value);
+            document.getElementById('delay-display').textContent = Math.round(effectsSettings.delay * 100) + '%';
+            updateEffectsMix();
+        }
+
+        function handleDelayTimeChange() {
+            effectsSettings.delayTime = parseFloat(document.getElementById('delay-time-slider').value);
+            document.getElementById('delay-time-display').textContent = effectsSettings.delayTime.toFixed(2) + 's';
+            if (delayNode) {
+                delayNode.delayTime.setValueAtTime(effectsSettings.delayTime, audioContext.currentTime);
+            }
+        }
+
+        function handleFeedbackChange() {
+            effectsSettings.feedback = parseFloat(document.getElementById('feedback-slider').value);
+            document.getElementById('feedback-display').textContent = Math.round(effectsSettings.feedback * 100) + '%';
+            if (feedbackGain) {
+                feedbackGain.gain.setValueAtTime(effectsSettings.feedback, audioContext.currentTime);
+            }
+        }
+
+        function handleFilterTypeChange() {
+            effectsSettings.filterType = document.getElementById('filter-type').value;
+            if (filterNode && effectsSettings.filterType !== 'none') {
+                filterNode.type = effectsSettings.filterType;
+            }
+        }
+
+        function handleCutoffChange() {
+            effectsSettings.cutoff = parseFloat(document.getElementById('cutoff-slider').value);
+            document.getElementById('cutoff-display').textContent = Math.round(effectsSettings.cutoff) + 'Hz';
+            if (filterNode) {
+                filterNode.frequency.setValueAtTime(effectsSettings.cutoff, audioContext.currentTime);
+            }
+        }
+
+        function handleResonanceChange() {
+            effectsSettings.resonance = parseFloat(document.getElementById('resonance-slider').value);
+            document.getElementById('resonance-display').textContent = effectsSettings.resonance.toFixed(1);
+            if (filterNode) {
+                filterNode.Q.setValueAtTime(effectsSettings.resonance, audioContext.currentTime);
+            }
+        }
+
+        function handleDistortionChange() {
+            effectsSettings.distortion = parseFloat(document.getElementById('distortion-slider').value);
+            document.getElementById('distortion-display').textContent = Math.round(effectsSettings.distortion);
+            if (distortionNode) {
+                distortionNode.curve = makeDistortionCurve(effectsSettings.distortion);
+            }
+        }
+
+        function updateEffectsMix() {
+            // This function would update the dry/wet mix for existing sounds
+            // For simplicity, it will affect new notes played
+        }
+
         // Initialization
         window.onload = () => {
             try {
@@ -3504,6 +3827,20 @@
                 displayModeSelect.addEventListener('change', handleDisplayModeChange);
                 keyModeSelect.addEventListener('change', handleKeyModeChange);
                 instrumentSelect.addEventListener('change', handleInstrumentChange);
+
+                // Effects event listeners
+                document.getElementById('attack-slider').addEventListener('input', handleAttackChange);
+                document.getElementById('decay-slider').addEventListener('input', handleDecayChange);
+                document.getElementById('sustain-slider').addEventListener('input', handleSustainChange);
+                document.getElementById('release-slider').addEventListener('input', handleReleaseChange);
+                document.getElementById('reverb-slider').addEventListener('input', handleReverbChange);
+                document.getElementById('delay-slider').addEventListener('input', handleDelayChange);
+                document.getElementById('delay-time-slider').addEventListener('input', handleDelayTimeChange);
+                document.getElementById('feedback-slider').addEventListener('input', handleFeedbackChange);
+                document.getElementById('filter-type').addEventListener('change', handleFilterTypeChange);
+                document.getElementById('cutoff-slider').addEventListener('input', handleCutoffChange);
+                document.getElementById('resonance-slider').addEventListener('input', handleResonanceChange);
+                document.getElementById('distortion-slider').addEventListener('input', handleDistortionChange);
 
                 // Sequencer event listeners
                 sequencerToggle.addEventListener('click', toggleSequencer);
