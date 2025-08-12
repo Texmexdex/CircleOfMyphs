@@ -1,0 +1,3520 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Circle of Fifths Explorer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 95vw;
+            width: 1200px;
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            background-color: #2a2a4a;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #4a4a6e;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.9em;
+            color: #b0b0d0;
+        }
+
+        select,
+        button {
+            padding: 8px 12px;
+            border: 1px solid #4a4a6e;
+            border-radius: 5px;
+            background-color: #3a3a5a;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        select:hover,
+        button:hover {
+            background-color: #4a4a6a;
+            border-color: #00bcd4;
+        }
+
+        h1 {
+            color: #00e5ff;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .circle-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .circle-container {
+            position: relative;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background-color: #2a2a4a;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .analysis-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 350px;
+            max-width: 400px;
+        }
+
+        .note-node {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #4a4a6e;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.75em;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid #6a6ab0;
+            transition: all 0.2s ease-in-out;
+            box-sizing: border-box;
+            transform: translate(-50%, -50%);
+            user-select: none;
+            z-index: 10;
+        }
+
+        .note-node.microtonal {
+            width: 35px;
+            height: 35px;
+            background-color: #5a5a7e;
+            border-color: #7a7ac0;
+            font-size: 0.65em;
+        }
+
+        .note-node.harmonic {
+            background-color: #6e4a6e;
+            border-color: #b06ab0;
+        }
+
+        .note-node.just {
+            background-color: #4a6e4a;
+            border-color: #6ab06a;
+        }
+
+        .note-node .main-note {
+            font-size: 1.1em;
+            line-height: 1;
+        }
+
+        .note-node .alt-note {
+            font-size: 0.7em;
+            opacity: 0.7;
+            line-height: 1;
+        }
+
+        .note-node:hover {
+            background-color: #6a6a9e;
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .note-node.selected {
+            background-color: #00bcd4;
+            color: #1a1a2e;
+            border-color: #00e5ff;
+            box-shadow: 0 0 15px #00e5ff, 0 0 30px #00e5ff;
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        .center-point {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #ffcc00;
+            z-index: 10;
+            box-shadow: 0 0 10px #ffcc00;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+        }
+
+        svg line {
+            stroke: #00bcd4;
+            stroke-width: 3;
+            transition: stroke-width 0.2s ease-in-out;
+            filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.8));
+        }
+
+        svg line.radial-line {
+            stroke: #ffcc00;
+            stroke-width: 2;
+            filter: drop-shadow(0 0 5px rgba(255, 204, 0, 0.8));
+        }
+
+        .info-display {
+            background-color: #2a2a4a;
+            border: 1px solid #4a4a6e;
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+            min-height: 80px;
+            text-align: left;
+            font-size: 1em;
+            color: #b0b0d0;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            line-height: 1.4;
+        }
+
+        .chord-builder {
+            background-color: #2a2a4a;
+            border: 1px solid #4a4a6e;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        .chord-builder h3 {
+            color: #00e5ff;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .chord-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .chord-btn {
+            padding: 6px 12px;
+            font-size: 0.9em;
+            background-color: #4a4a6e;
+            color: #e0e0e0;
+            border: 1px solid #6a6ab0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chord-btn:hover {
+            background-color: #6a6a9e;
+            border-color: #00bcd4;
+        }
+
+        .chord-btn.active {
+            background-color: #00bcd4;
+            color: #1a1a2e;
+            border-color: #00e5ff;
+        }
+
+        .progression-display {
+            background-color: #3a3a5a;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .key-signature {
+            background-color: #2a2a4a;
+            border: 1px solid #4a4a6e;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        .key-signature h3 {
+            color: #00e5ff;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .reset-button {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
+        }
+
+        .reset-button:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .reset-button:active {
+            transform: translateY(0);
+        }
+
+        .sequencer-btn {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            background-color: #4a4a6e;
+            color: #e0e0e0;
+            border: 1px solid #6a6ab0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sequencer-btn:hover {
+            background-color: #6a6a9e;
+            border-color: #00bcd4;
+        }
+
+        .sequencer-btn.active {
+            background-color: #00bcd4;
+            color: #1a1a2e;
+            border-color: #00e5ff;
+        }
+
+        .sequencer-panel {
+            background-color: #2a2a4a;
+            border: 1px solid #4a4a6e;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        .sequencer-panel h3 {
+            color: #00e5ff;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .looper-panel {
+            background-color: #2a2a4a;
+            border: 1px solid #4a4a6e;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            margin-top: 15px;
+        }
+
+        .looper-panel h3 {
+            color: #ff6b35;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .looper-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .loop-btn {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            background-color: #4a4a6e;
+            color: #e0e0e0;
+            border: 1px solid #6a6ab0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 70px;
+        }
+
+        .loop-btn:hover {
+            background-color: #6a6a9e;
+            border-color: #ff6b35;
+        }
+
+        .loop-btn.active {
+            background-color: #ff6b35;
+            color: #1a1a2e;
+            border-color: #ff8c42;
+        }
+
+        .loop-btn.recording {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            animation: pulse-record 1s ease-in-out infinite;
+        }
+
+        .loop-btn.playing {
+            background-color: #27ae60;
+            border-color: #2ecc71;
+        }
+
+        .loop-display {
+            background-color: #3a3a5a;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8em;
+            max-height: 80px;
+            overflow-y: auto;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .loop-controls-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .loop-controls-row label {
+            font-size: 0.9em;
+            color: #b0b0d0;
+            min-width: 80px;
+        }
+
+        .loop-controls-row input[type="range"] {
+            flex: 1;
+            height: 5px;
+            border-radius: 5px;
+            background: #4a4a6e;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .loop-controls-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #ff6b35;
+            cursor: pointer;
+        }
+
+        .loop-controls-row input[type="range"]::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #ff6b35;
+            cursor: pointer;
+            border: none;
+        }
+
+        .loop-indicator {
+            width: 100%;
+            height: 4px;
+            background-color: #4a4a6e;
+            border-radius: 2px;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loop-progress {
+            height: 100%;
+            background-color: #ff6b35;
+            border-radius: 2px;
+            transition: width 0.1s ease;
+            width: 0%;
+        }
+
+        .sequencer-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .seq-btn {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            background-color: #4a4a6e;
+            color: #e0e0e0;
+            border: 1px solid #6a6ab0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 70px;
+        }
+
+        .seq-btn:hover {
+            background-color: #6a6a9e;
+            border-color: #00bcd4;
+        }
+
+        .seq-btn.active {
+            background-color: #00bcd4;
+            color: #1a1a2e;
+            border-color: #00e5ff;
+        }
+
+        .seq-btn.recording {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            animation: pulse-record 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-record {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .tempo-control {
+            margin-bottom: 15px;
+        }
+
+        .tempo-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #b0b0d0;
+        }
+
+        .tempo-control input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: #4a4a6e;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .tempo-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #00bcd4;
+            cursor: pointer;
+        }
+
+        .tempo-control input[type="range"]::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #00bcd4;
+            cursor: pointer;
+            border: none;
+        }
+
+        .sequence-display {
+            background-color: #3a3a5a;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8em;
+            max-height: 100px;
+            overflow-y: auto;
+            line-height: 1.4;
+        }
+
+        .pattern-controls {
+            margin-bottom: 15px;
+        }
+
+        .pattern-controls label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #b0b0d0;
+        }
+
+        .pattern-controls input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: #4a4a6e;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .pattern-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #00bcd4;
+            cursor: pointer;
+        }
+
+        .pattern-grid {
+            display: grid;
+            gap: 2px;
+            background-color: #3a3a5a;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .pattern-row {
+            display: grid;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .pattern-label {
+            font-size: 0.8em;
+            color: #b0b0d0;
+            padding: 4px 8px;
+            background-color: #4a4a6e;
+            border-radius: 3px;
+            text-align: center;
+            min-width: 40px;
+        }
+
+        .pattern-step {
+            width: 20px;
+            height: 20px;
+            background-color: #2a2a4a;
+            border: 1px solid #4a4a6e;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pattern-step:hover {
+            background-color: #5a5a7e;
+            border-color: #00bcd4;
+        }
+
+        .pattern-step.active {
+            background-color: #00bcd4;
+            border-color: #00e5ff;
+            box-shadow: 0 0 5px rgba(0, 188, 212, 0.5);
+        }
+
+        .pattern-step.playing {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.8);
+        }
+
+        .step-indicator {
+            grid-column: 1 / -1;
+            height: 2px;
+            background-color: #00bcd4;
+            margin: 5px 0;
+            border-radius: 1px;
+            position: relative;
+        }
+
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 0;
+            width: 4px;
+            height: 4px;
+            background-color: #00e5ff;
+            border-radius: 50%;
+            transition: left 0.1s ease;
+        }
+
+        @media (max-width: 900px) {
+            .content-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .analysis-panel {
+                min-width: 300px;
+                max-width: 450px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .circle-container {
+                width: 350px;
+                height: 350px;
+            }
+
+            .note-node {
+                width: 35px;
+                height: 35px;
+                font-size: 0.65em;
+            }
+
+            .controls-panel {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .main-container {
+                width: 95vw;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <h1>Advanced Circle of Fifths Explorer</h1>
+
+        <div class="controls-panel">
+            <div class="control-group">
+                <label>Circle Type</label>
+                <select id="circle-type">
+                    <option value="12-tone">12-Tone (Standard)</option>
+                    <option value="24-tone">24-Tone (Quarter-tones)</option>
+                    <option value="harmonic">Harmonic Series</option>
+                    <option value="just">Just Intonation</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Display Mode</label>
+                <select id="display-mode">
+                    <option value="sharps">Sharps (#)</option>
+                    <option value="flats">Flats (♭)</option>
+                    <option value="both">Both</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Key Mode</label>
+                <select id="key-mode">
+                    <option value="major">Major Keys</option>
+                    <option value="minor">Minor Keys</option>
+                    <option value="both">Both</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Instrument</label>
+                <select id="instrument-select">
+                    <option value="sine">Sine Wave</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="sawtooth">Sawtooth</option>
+                    <option value="square">Square</option>
+                    <option value="bell">Bell</option>
+                    <option value="pad">Pad</option>
+                    <option value="pluck">Pluck</option>
+                    <option value="organ">Organ</option>
+                    <option value="piano">Piano</option>
+                    <option value="bass">Bass</option>
+                    <option value="lead">Lead Synth</option>
+                    <option value="choir">Choir</option>
+                    <option value="strings">Strings</option>
+                    <option value="brass">Brass</option>
+                    <option value="flute">Flute</option>
+                    <option value="guitar">Guitar</option>
+                    <option value="ambient">Ambient</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Sequencer</label>
+                <button id="sequencer-toggle" class="sequencer-btn">Enable Sequencer</button>
+            </div>
+            <div class="control-group">
+                <button id="reset-button" class="reset-button">Reset All</button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="circle-section">
+                <div class="circle-container">
+                    <div class="center-point"></div>
+                    <svg id="line-canvas"></svg>
+                </div>
+                <div class="info-display" id="info-display">
+                    Click notes on the circle to explore musical relationships and chord progressions.
+                </div>
+            </div>
+
+            <div class="analysis-panel">
+                <div class="chord-builder">
+                    <h3>Chord Builder</h3>
+                    <div class="chord-buttons" id="chord-buttons"></div>
+                    <div class="progression-display" id="progression-display">
+                        Select notes or use chord buttons to build progressions
+                    </div>
+                </div>
+
+                <div class="key-signature">
+                    <h3>Key Signature Analysis</h3>
+                    <div id="key-analysis">
+                        Select notes to see key signature information
+                    </div>
+                </div>
+
+                <div class="key-signature">
+                    <h3>Audio Illusions & Psychoacoustics</h3>
+                    <div class="chord-buttons" id="illusion-buttons"></div>
+                    <div id="illusion-analysis">
+                        Explore auditory illusions and psychoacoustic phenomena
+                    </div>
+                </div>
+
+                <div class="key-signature">
+                    <h3>Sacred Geometry & Mathematics</h3>
+                    <div class="chord-buttons" id="geometry-buttons"></div>
+                    <div id="geometry-analysis">
+                        Discover mathematical patterns and sacred ratios in music
+                    </div>
+                </div>
+
+                <div class="key-signature">
+                    <h3>Resonance & Physics</h3>
+                    <div class="chord-buttons" id="physics-buttons"></div>
+                    <div id="physics-analysis">
+                        Explore physical properties of sound and resonance
+                    </div>
+                </div>
+
+                <div class="sequencer-panel" id="sequencer-panel" style="display: none;">
+                    <h3>Pattern Sequencer</h3>
+                    <div class="sequencer-controls">
+                        <button id="play-btn" class="seq-btn">▶ Play</button>
+                        <button id="stop-btn" class="seq-btn">■ Stop</button>
+                        <button id="clear-btn" class="seq-btn">Clear</button>
+                        <button id="chord-mode-btn" class="seq-btn">Chord Mode</button>
+                    </div>
+                    <div class="chord-progression-controls" style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 0.9em; color: #b0b0d0;">Chord
+                            Progressions:</label>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                            <button class="chord-btn" onclick="generateProgression('I-V-vi-IV')">I-V-vi-IV</button>
+                            <button class="chord-btn" onclick="generateProgression('vi-IV-I-V')">vi-IV-I-V</button>
+                            <button class="chord-btn" onclick="generateProgression('I-vi-IV-V')">I-vi-IV-V</button>
+                            <button class="chord-btn" onclick="generateProgression('ii-V-I')">ii-V-I</button>
+                            <button class="chord-btn" onclick="generateProgression('I-IV-V-I')">I-IV-V-I</button>
+                            <button class="chord-btn" onclick="generateProgression('vi-ii-V-I')">vi-ii-V-I</button>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label style="font-size: 0.9em; color: #b0b0d0;">Key:</label>
+                            <select id="progression-key" style="padding: 4px 8px; font-size: 0.8em;">
+                                <option value="0">C</option>
+                                <option value="1">C#/Db</option>
+                                <option value="2">D</option>
+                                <option value="3">D#/Eb</option>
+                                <option value="4">E</option>
+                                <option value="5">F</option>
+                                <option value="6">F#/Gb</option>
+                                <option value="7">G</option>
+                                <option value="8">G#/Ab</option>
+                                <option value="9">A</option>
+                                <option value="10">A#/Bb</option>
+                                <option value="11">B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="tempo-control">
+                        <label>Tempo: <span id="tempo-display">120</span> BPM</label>
+                        <input type="range" id="tempo-slider" min="60" max="200" value="120">
+                    </div>
+                    <div class="pattern-controls">
+                        <label>Steps: <span id="steps-display">16</span></label>
+                        <input type="range" id="steps-slider" min="8" max="32" value="16">
+                    </div>
+                    <div class="pattern-grid" id="pattern-grid">
+                        <!-- Pattern grid will be generated by JavaScript -->
+                    </div>
+
+                    <div class="looper-panel">
+                        <h3>Record Looper</h3>
+                        <div class="looper-controls">
+                            <button id="record-btn" class="loop-btn">● Record</button>
+                            <button id="loop-play-btn" class="loop-btn">▶ Play Loop</button>
+                            <button id="loop-stop-btn" class="loop-btn">■ Stop Loop</button>
+                            <button id="loop-clear-btn" class="loop-btn">Clear Loop</button>
+                            <button id="overdub-btn" class="loop-btn">+ Overdub</button>
+                        </div>
+                        <div class="loop-indicator">
+                            <div class="loop-progress" id="loop-progress"></div>
+                        </div>
+                        <div class="loop-controls-row">
+                            <label>Loop Length:</label>
+                            <input type="range" id="loop-length-slider" min="2" max="16" value="4">
+                            <span id="loop-length-display">4</span> beats
+                        </div>
+                        <div class="loop-controls-row">
+                            <label>Quantize:</label>
+                            <select id="quantize-select">
+                                <option value="1/4">Quarter Note</option>
+                                <option value="1/8">Eighth Note</option>
+                                <option value="1/16">Sixteenth Note</option>
+                                <option value="off">Off</option>
+                            </select>
+                        </div>
+                        <div class="loop-display" id="loop-display">
+                            Click Record and play notes on the circle to create a loop
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Musical note systems
+        const noteData12 = [
+            { sharp: "C", flat: "C", main: "C", freq: 261.63 },
+            { sharp: "C#", flat: "D♭", main: "C#", freq: 277.18 },
+            { sharp: "D", flat: "D", main: "D", freq: 293.66 },
+            { sharp: "D#", flat: "E♭", main: "D#", freq: 311.13 },
+            { sharp: "E", flat: "E", main: "E", freq: 329.63 },
+            { sharp: "F", flat: "F", main: "F", freq: 349.23 },
+            { sharp: "F#", flat: "G♭", main: "F#", freq: 369.99 },
+            { sharp: "G", flat: "G", main: "G", freq: 392.00 },
+            { sharp: "G#", flat: "A♭", main: "G#", freq: 415.30 },
+            { sharp: "A", flat: "A", main: "A", freq: 440.00 },
+            { sharp: "A#", flat: "B♭", main: "A#", freq: 466.16 },
+            { sharp: "B", flat: "B", main: "B", freq: 493.88 }
+        ];
+
+        const noteData24 = [
+            { name: "C", freq: 261.63, type: "semitone" },
+            { name: "C↗", freq: 269.29, type: "quarter" },
+            { name: "C#/D♭", freq: 277.18, type: "semitone" },
+            { name: "D♭↗", freq: 285.30, type: "quarter" },
+            { name: "D", freq: 293.66, type: "semitone" },
+            { name: "D↗", freq: 302.27, type: "quarter" },
+            { name: "D#/E♭", freq: 311.13, type: "semitone" },
+            { name: "E♭↗", freq: 320.24, type: "quarter" },
+            { name: "E", freq: 329.63, type: "semitone" },
+            { name: "E↗", freq: 339.29, type: "quarter" },
+            { name: "F", freq: 349.23, type: "semitone" },
+            { name: "F↗", freq: 359.46, type: "quarter" },
+            { name: "F#/G♭", freq: 369.99, type: "semitone" },
+            { name: "G♭↗", freq: 380.84, type: "quarter" },
+            { name: "G", freq: 392.00, type: "semitone" },
+            { name: "G↗", freq: 403.48, type: "quarter" },
+            { name: "G#/A♭", freq: 415.30, type: "semitone" },
+            { name: "A♭↗", freq: 427.47, type: "quarter" },
+            { name: "A", freq: 440.00, type: "semitone" },
+            { name: "A↗", freq: 452.89, type: "quarter" },
+            { name: "A#/B♭", freq: 466.16, type: "semitone" },
+            { name: "B♭↗", freq: 479.82, type: "quarter" },
+            { name: "B", freq: 493.88, type: "semitone" },
+            { name: "B↗", freq: 508.36, type: "quarter" }
+        ];
+
+        const harmonicSeries = [
+            { name: "C₁", freq: 261.63, harmonic: 1, ratio: "1:1" },
+            { name: "C₂", freq: 523.25, harmonic: 2, ratio: "2:1" },
+            { name: "G₃", freq: 784.88, harmonic: 3, ratio: "3:2" },
+            { name: "C₄", freq: 1046.50, harmonic: 4, ratio: "4:3" },
+            { name: "E₅", freq: 1308.13, harmonic: 5, ratio: "5:4" },
+            { name: "G₆", freq: 1569.75, harmonic: 6, ratio: "6:5" },
+            { name: "B♭₇", freq: 1831.38, harmonic: 7, ratio: "7:6" },
+            { name: "C₈", freq: 2093.00, harmonic: 8, ratio: "8:7" },
+            { name: "D₉", freq: 2354.63, harmonic: 9, ratio: "9:8" },
+            { name: "E₁₀", freq: 2616.25, harmonic: 10, ratio: "10:9" },
+            { name: "F#₁₁", freq: 2877.88, harmonic: 11, ratio: "11:10" },
+            { name: "G₁₂", freq: 3139.50, harmonic: 12, ratio: "12:11" },
+            { name: "A♭₁₃", freq: 3401.13, harmonic: 13, ratio: "13:12" },
+            { name: "B♭₁₄", freq: 3662.75, harmonic: 14, ratio: "14:13" },
+            { name: "B₁₅", freq: 3924.38, harmonic: 15, ratio: "15:14" },
+            { name: "C₁₆", freq: 4186.00, harmonic: 16, ratio: "16:15" }
+        ];
+
+        const justIntonation = [
+            { name: "C", freq: 261.63, ratio: "1:1", cents: 0 },
+            { name: "D♭", freq: 279.07, ratio: "16:15", cents: 112 },
+            { name: "D", freq: 294.33, ratio: "9:8", cents: 204 },
+            { name: "E♭", freq: 313.96, ratio: "6:5", cents: 316 },
+            { name: "E", freq: 327.04, ratio: "5:4", cents: 386 },
+            { name: "F", freq: 349.23, ratio: "4:3", cents: 498 },
+            { name: "F#", freq: 367.92, ratio: "45:32", cents: 590 },
+            { name: "G", freq: 392.44, ratio: "3:2", cents: 702 },
+            { name: "A♭", freq: 418.60, ratio: "8:5", cents: 814 },
+            { name: "A", freq: 436.05, ratio: "5:3", cents: 884 },
+            { name: "B♭", freq: 470.93, ratio: "16:9", cents: 996 },
+            { name: "B", freq: 490.55, ratio: "15:8", cents: 1088 }
+        ];
+
+        // Circle arrangements
+        const circleOfFifths = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];
+        const circle24Order = Array.from({ length: 24 }, (_, i) => i);
+        const harmonicOrder = Array.from({ length: 16 }, (_, i) => i);
+        const justOrder = Array.from({ length: 12 }, (_, i) => i);
+
+        const intervalNames = {
+            0: "Unison/Octave", 1: "Minor 2nd", 2: "Major 2nd", 3: "Minor 3rd",
+            4: "Major 3rd", 5: "Perfect 4th", 6: "Tritone", 7: "Perfect 5th",
+            8: "Minor 6th", 9: "Major 6th", 10: "Minor 7th", 11: "Major 7th"
+        };
+
+        // Chord patterns for different systems
+        const chordPatterns = {
+            "12-tone": {
+                // Traditional Triads
+                "Major": [4, 7], "Minor": [3, 7], "Diminished": [3, 6], "Augmented": [4, 8],
+
+                // 7th Chords
+                "Major 7th": [4, 7, 11], "Minor 7th": [3, 7, 10], "Dominant 7th": [4, 7, 10],
+                "Half-Diminished": [3, 6, 10], "Fully Diminished": [3, 6, 9], "Major 7♯5": [4, 8, 11],
+
+                // Extended Chords
+                "Major 9th": [4, 7, 11, 2], "Minor 9th": [3, 7, 10, 2], "Dominant 9th": [4, 7, 10, 2],
+                "Major 11th": [4, 7, 11, 2, 5], "Minor 11th": [3, 7, 10, 2, 5], "Dominant 11th": [4, 7, 10, 2, 5],
+                "Major 13th": [4, 7, 11, 2, 5, 9], "Minor 13th": [3, 7, 10, 2, 5, 9], "Dominant 13th": [4, 7, 10, 2, 5, 9],
+
+                // Suspended Chords
+                "Sus2": [2, 7], "Sus4": [5, 7], "7Sus2": [2, 7, 10], "7Sus4": [5, 7, 10],
+                "9Sus4": [5, 7, 10, 2], "Add9": [4, 7, 2], "6th": [4, 7, 9], "6/9": [4, 7, 9, 2],
+
+                // Modal Chords (Church Modes)
+                "Ionian": [2, 4, 5, 7, 9, 11], "Dorian": [2, 3, 5, 7, 9, 10], "Phrygian": [1, 3, 5, 7, 8, 10],
+                "Lydian": [2, 4, 6, 7, 9, 11], "Mixolydian": [2, 4, 5, 7, 9, 10], "Aeolian": [2, 3, 5, 7, 8, 10],
+                "Locrian": [1, 3, 5, 6, 8, 10],
+
+                // Exotic Scales
+                "Harmonic Minor": [2, 3, 5, 7, 8, 11], "Melodic Minor": [2, 3, 5, 7, 9, 11],
+                "Hungarian Minor": [2, 3, 6, 7, 8, 11], "Neapolitan": [1, 3, 5, 7, 8, 11],
+                "Persian": [1, 4, 5, 6, 8, 11], "Byzantine": [1, 4, 5, 7, 8, 11],
+                "Arabic": [1, 4, 5, 6, 9, 10], "Japanese": [1, 5, 6, 10], "Pentatonic": [2, 4, 7, 9],
+
+                // Sacred Geometry Patterns
+                "Golden Ratio": [3, 8], "Fibonacci": [1, 2, 3, 5, 8], "Phi Spiral": [2, 5, 8, 1],
+                "Vesica Piscis": [4, 8], "Flower of Life": [2, 4, 6, 8, 10], "Metatron": [1, 3, 5, 7, 9, 11],
+                "Platonic": [3, 6, 9], "Dodecagon": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+
+                // Mathematical Anomalies
+                "Perfect 4ths": [5, 10], "Perfect 5ths": [7, 2], "Tritone": [6], "Wolf Fifth": [6, 1],
+                "Whole Tone": [2, 4, 6, 8, 10], "Chromatic": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "Quartal": [5, 10, 3], "Quintal": [7, 2, 9], "Secundal": [1, 2, 3],
+                "Septimal": [7, 10, 1], "Undecimal": [11, 2, 5],
+
+                // Psychoacoustic Illusions
+                "Shepard Tone": [0, 3, 6, 9], "Risset Rhythm": [2, 5, 8, 11], "Phantom Fundamental": [4, 7, 10, 1],
+                "Octave Illusion": [0, 6], "Scale Illusion": [1, 3, 5, 7, 9, 11], "Tritone Paradox": [0, 6, 1, 7],
+                "Missing Fundamental": [4, 7, 11, 2], "Combination Tones": [3, 7, 10, 2]
+            },
+            "24-tone": {
+                // Microtonal Triads
+                "Major": [8, 14], "Minor": [6, 14], "Diminished": [6, 12], "Augmented": [8, 16],
+                "Quarter Major": [7, 14], "Quarter Minor": [7, 13], "3-Quarter": [9, 15],
+                "Neutral Triad": [7, 13], "Super Major": [9, 14], "Sub Minor": [5, 14],
+
+                // Microtonal Scales
+                "24-TET Chromatic": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+                "Arabic Maqam": [2, 3, 6, 8, 10, 11, 14, 16, 18, 19, 22], "Turkish Makam": [1, 4, 6, 8, 9, 12, 14, 16, 17, 20, 22],
+                "Persian Dastgah": [2, 3, 6, 8, 10, 11, 14, 16, 18, 19, 22], "Indian Raga": [2, 5, 6, 8, 10, 13, 14, 16, 18, 21, 22],
+
+                // Sacred Geometry in Microtones
+                "Golden": [5, 11, 17], "Fibonacci": [3, 8, 13], "Prime": [5, 11, 17, 23],
+                "Triangle": [8, 16], "Square": [6, 12, 18], "Pentagon": [5, 10, 15, 20],
+                "Hexagon": [4, 8, 12, 16, 20], "Octagon": [3, 6, 9, 12, 15, 18, 21],
+                "Dodecagon": [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22],
+
+                // Xenharmonic Structures
+                "Bohlen-Pierce": [3, 7, 13, 17, 21], "Alpha Scale": [4, 7, 11, 15, 18, 22],
+                "Beta Scale": [3, 6, 10, 13, 17, 20], "Gamma Scale": [4, 8, 11, 15, 19, 22],
+                "Narrow": [2, 8, 14], "Wide": [10, 18], "Spiral": [3, 7, 11, 15, 19],
+                "Xenharmonic": [5, 9, 13, 17, 21], "Microtonal Cluster": [1, 2, 3, 4, 5]
+            },
+            "harmonic": {
+                // Natural Harmonic Series
+                "Natural Triad": [2, 4], "Perfect Fifth": [1, 2], "Overtone": [1, 2, 3],
+                "Harmonic 7th": [1, 2, 3, 6], "Pure Ratios": [0, 2, 4, 6],
+                "Full Series": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+
+                // Harmonic Subsets
+                "Odd Harmonics": [1, 3, 5, 7, 9, 11, 13, 15], "Even Harmonics": [2, 4, 6, 8, 10, 12, 14],
+                "Prime Harmonics": [2, 3, 5, 7, 11, 13], "Composite Harmonics": [4, 6, 8, 9, 10, 12, 14, 15],
+                "Low Harmonics": [1, 2, 3, 4, 5], "Mid Harmonics": [6, 7, 8, 9, 10], "High Harmonics": [11, 12, 13, 14, 15],
+
+                // Resonance Patterns
+                "Resonant": [1, 3, 5], "Acoustic": [2, 4, 6, 8], "Formant": [3, 5, 7],
+                "Subharmonic": [8, 4, 2, 1], "Undertone": [15, 14, 13, 12, 11],
+                "Difference Tones": [1, 2, 1], "Combination Tones": [3, 5, 8],
+
+                // Mathematical Harmonics
+                "Fibonacci Harmonics": [1, 2, 3, 5, 8, 13], "Golden Harmonics": [2, 3, 5, 8],
+                "Pythagorean": [1, 2, 3, 4], "Platonic Harmonics": [3, 4, 5, 6],
+                "Sacred Ratios": [2, 3, 4, 6], "Divine Proportion": [3, 5, 8]
+            },
+            "just": {
+                // Pure Just Intonation
+                "Pure Major": [2, 4], "Pure Minor": [2, 4], "Perfect": [1, 2, 4],
+                "Just 7th": [2, 4, 6], "Natural": [1, 3, 5], "Consonant": [0, 2, 4],
+                "Just Chromatic": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+
+                // Historical Temperaments
+                "Pythagorean": [1, 4, 7], "Meantone": [2, 4, 6], "Well Tempered": [1, 3, 5, 7],
+                "Kirnberger": [2, 4, 7, 9], "Werckmeister": [1, 3, 6, 8], "Vallotti": [2, 5, 7, 10],
+
+                // Mathematical Ratios
+                "Golden Ratio": [1, 3, 7], "Fibonacci": [1, 2, 5], "Prime": [2, 3, 5],
+                "Harmonic Mean": [2, 3, 6], "Geometric Mean": [1, 4, 8], "Arithmetic Mean": [3, 5, 7],
+                "Perfect Ratios": [0, 2, 4, 7], "Simple Ratios": [1, 3, 5, 8],
+
+                // Xenharmonic Just
+                "Septimal": [2, 4, 6, 10], "Undecimal": [2, 4, 7, 11], "Tridecimal": [2, 5, 8, 11],
+                "Limit-5": [0, 2, 4, 7, 9], "Limit-7": [0, 2, 4, 6, 7, 9, 10], "Limit-11": [0, 2, 4, 6, 7, 9, 10, 11],
+                "Microtonal Just": [1, 3, 5, 7, 9], "Extended Just": [0, 1, 3, 4, 6, 7, 9, 10]
+            }
+        };
+
+        // Educational Content Data
+        const audioIllusions = {
+            "Shepard Tone": {
+                pattern: [0, 3, 6, 9],  // Diminished chord - circular illusion
+                description: "Creates the illusion of a continuously ascending or descending pitch",
+                explanation: "Uses multiple octaves of the same pitch class to create an auditory paradox"
+            },
+            "Risset Rhythm": {
+                pattern: [0, 2, 5, 8, 11],  // Accelerating pattern
+                description: "Rhythmic illusion that seems to accelerate infinitely",
+                explanation: "Combines multiple tempo layers to create temporal paradox"
+            },
+            "Phantom Fundamental": {
+                pattern: [4, 7, 10],  // Harmonics without root
+                description: "Brain perceives a missing fundamental frequency",
+                explanation: "Harmonics create the perception of a bass note that isn't actually played"
+            },
+            "Octave Illusion": {
+                pattern: [0, 6],  // Tritone - maximum ambiguity
+                description: "Alternating high and low tones create spatial confusion",
+                explanation: "Brain struggles to localize the source of alternating octaves"
+            },
+            "Scale Illusion": {
+                pattern: [0, 2, 4, 6, 8, 10],  // Whole tone scale
+                description: "Ascending and descending scales played simultaneously",
+                explanation: "Brain reorganizes the notes into coherent melodic streams"
+            },
+            "Tritone Paradox": {
+                pattern: [0, 6, 3, 9],  // Tritone pairs
+                description: "Ambiguous pitch direction with tritone intervals",
+                explanation: "Cultural and individual differences affect perceived pitch direction"
+            },
+            "Missing Fundamental": {
+                pattern: [2, 5, 9],  // Upper harmonics only
+                description: "Complex tones without their fundamental frequency",
+                explanation: "Brain reconstructs the missing fundamental from harmonic content"
+            },
+            "Combination Tones": {
+                pattern: [0, 1, 7, 8],  // Close intervals for beating
+                description: "Additional tones created by nonlinear ear response",
+                explanation: "Ear generates sum and difference frequencies from simultaneous tones"
+            }
+        };
+
+        const sacredGeometry = {
+            "Golden Ratio (φ)": {
+                pattern: [0, 8],  // Perfect fifth - golden ratio in music
+                description: "Divine proportion found throughout nature (1.618...)",
+                explanation: "Ratio appears in spiral galaxies, flower petals, and human proportions"
+            },
+            "Fibonacci Sequence": {
+                pattern: [0, 1, 2, 3, 5, 8],  // Fibonacci numbers as semitones
+                description: "Each number is sum of previous two (1,1,2,3,5,8,13...)",
+                explanation: "Appears in pinecones, nautilus shells, and musical phrase structures"
+            },
+            "Phi Spiral": {
+                pattern: [0, 3, 8, 11],  // Spiral progression through circle
+                description: "Logarithmic spiral based on golden ratio",
+                explanation: "Found in galaxies, hurricanes, and cochlea of the inner ear"
+            },
+            "Vesica Piscis": {
+                pattern: [0, 6],  // Tritone - sacred intersection
+                description: "Intersection of two circles, symbol of creation",
+                explanation: "Represents the womb of the universe and birth of consciousness"
+            },
+            "Flower of Life": {
+                pattern: [0, 2, 4, 6, 8, 10],  // Whole tone scale - hexagonal
+                description: "19 overlapping circles forming hexagonal pattern",
+                explanation: "Contains all Platonic solids and represents fundamental forms of space"
+            },
+            "Metatron's Cube": {
+                pattern: [0, 1, 3, 4, 6, 7, 9, 10],  // Octatonic scale - 8 points
+                description: "Contains all five Platonic solids",
+                explanation: "Represents the underlying geometric structure of reality"
+            },
+            "Platonic Solids": {
+                pattern: [0, 3, 6, 9],  // Diminished chord - 4 equal divisions
+                description: "Five regular polyhedra: tetrahedron, cube, octahedron, dodecahedron, icosahedron",
+                explanation: "Plato associated these with the classical elements and cosmos"
+            },
+            "Dodecagon": {
+                pattern: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],  // All 12 points
+                description: "12-sided polygon representing completeness",
+                explanation: "Found in clock faces, zodiac, and chromatic scale"
+            },
+            "Sri Yantra": {
+                pattern: [0, 2, 5, 7, 9],  // Pentatonic - 5 triangles
+                description: "Nine interlocking triangles representing cosmos",
+                explanation: "Sacred geometry of creation and divine feminine energy"
+            },
+            "Torus Field": {
+                pattern: [0, 3, 7, 10],  // Major 7th chord - torus energy
+                description: "Donut-shaped energy field around all matter",
+                explanation: "Fundamental pattern of energy flow in atoms, hearts, and galaxies"
+            }
+        };
+
+        const resonancePhysics = {
+            "Harmonic Series": {
+                pattern: [0, 7, 4, 9, 2, 6],  // Natural harmonic overtones
+                description: "Natural overtones produced by vibrating strings",
+                explanation: "Foundation of all musical harmony and timbre"
+            },
+            "Schumann Resonance": {
+                pattern: [0, 7, 2],  // Earth's fundamental and harmonics
+                description: "Earth's electromagnetic frequency (7.83 Hz)",
+                explanation: "Global electromagnetic resonances in Earth-ionosphere cavity"
+            },
+            "Cymatics": {
+                pattern: [0, 3, 6, 9],  // Symmetric wave patterns
+                description: "Sound waves create geometric patterns in matter",
+                explanation: "Demonstrates how vibration organizes matter into sacred forms"
+            },
+            "Standing Waves": {
+                pattern: [0, 6],  // Node/antinode pattern (tritone)
+                description: "Stationary wave patterns from interference",
+                explanation: "Creates nodes and antinodes, basis of musical instruments"
+            },
+            "Resonant Frequency": {
+                pattern: [0, 4, 7],  // Major triad - natural resonance
+                description: "Natural frequency at which objects vibrate",
+                explanation: "Every object has frequencies that cause maximum amplitude"
+            },
+            "Binaural Beats": {
+                pattern: [0, 1],  // Close frequencies for beating
+                description: "Brain synchronizes to difference between two frequencies",
+                explanation: "Can induce altered states of consciousness and healing"
+            },
+            "Solfeggio Frequencies": {
+                pattern: [0, 4, 8],  // Sacred healing intervals
+                description: "Ancient healing frequencies (396, 417, 528, 639, 741, 852 Hz)",
+                explanation: "Said to have spiritual and healing properties"
+            },
+            "Formant Frequencies": {
+                pattern: [0, 2, 5, 8],  // Vowel resonances
+                description: "Resonant frequencies that define vowel sounds",
+                explanation: "Shape of vocal tract creates characteristic frequency peaks"
+            },
+            "Wolf Tones": {
+                pattern: [0, 6, 11],  // Dissonant beating intervals
+                description: "Beating effect in string instruments",
+                explanation: "Interference between string vibration and body resonance"
+            },
+            "Helmholtz Resonance": {
+                pattern: [0, 5, 7],  // Perfect fourth and fifth
+                description: "Air resonance in enclosed spaces",
+                explanation: "Explains how instrument bodies amplify and color sound"
+            }
+        };
+
+        // DOM elements
+        const circleContainer = document.querySelector('.circle-container');
+        const svgCanvas = document.getElementById('line-canvas');
+        const infoDisplay = document.getElementById('info-display');
+        const resetButton = document.getElementById('reset-button');
+        const circleTypeSelect = document.getElementById('circle-type');
+        const displayModeSelect = document.getElementById('display-mode');
+        const keyModeSelect = document.getElementById('key-mode');
+        const instrumentSelect = document.getElementById('instrument-select');
+        const chordButtonsContainer = document.getElementById('chord-buttons');
+        const progressionDisplay = document.getElementById('progression-display');
+        const keyAnalysis = document.getElementById('key-analysis');
+
+        // Educational panel DOM elements
+        const illusionButtonsContainer = document.getElementById('illusion-buttons');
+        const illusionAnalysis = document.getElementById('illusion-analysis');
+        const geometryButtonsContainer = document.getElementById('geometry-buttons');
+        const geometryAnalysis = document.getElementById('geometry-analysis');
+        const physicsButtonsContainer = document.getElementById('physics-buttons');
+        const physicsAnalysis = document.getElementById('physics-analysis');
+
+        // Sequencer DOM elements
+        const sequencerToggle = document.getElementById('sequencer-toggle');
+        const sequencerPanel = document.getElementById('sequencer-panel');
+        const playBtn = document.getElementById('play-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const tempoSlider = document.getElementById('tempo-slider');
+        const tempoDisplay = document.getElementById('tempo-display');
+        const stepsSlider = document.getElementById('steps-slider');
+        const stepsDisplay = document.getElementById('steps-display');
+        const patternGridContainer = document.getElementById('pattern-grid');
+
+        // Looper DOM elements
+        const recordBtn = document.getElementById('record-btn');
+        const loopPlayBtn = document.getElementById('loop-play-btn');
+        const loopStopBtn = document.getElementById('loop-stop-btn');
+        const loopClearBtn = document.getElementById('loop-clear-btn');
+        const overdubBtn = document.getElementById('overdub-btn');
+        const loopLengthSlider = document.getElementById('loop-length-slider');
+        const loopLengthDisplay = document.getElementById('loop-length-display');
+        const quantizeSelect = document.getElementById('quantize-select');
+        const loopDisplay = document.getElementById('loop-display');
+        const loopProgress = document.getElementById('loop-progress');
+
+        // Chord progression data
+        const chordProgressions = {
+            'I-V-vi-IV': [0, 7, 9, 5],      // C-G-Am-F (pop progression)
+            'vi-IV-I-V': [9, 5, 0, 7],      // Am-F-C-G (vi-IV-I-V)
+            'I-vi-IV-V': [0, 9, 5, 7],      // C-Am-F-G (50s progression)
+            'ii-V-I': [2, 7, 0],            // Dm-G-C (jazz turnaround)
+            'I-IV-V-I': [0, 5, 7, 0],       // C-F-G-C (classical)
+            'vi-ii-V-I': [9, 2, 7, 0]       // Am-Dm-G-C (circle progression)
+        };
+
+        const chordTypes = {
+            major: [0, 4, 7],           // Major triad
+            minor: [0, 3, 7],           // Minor triad
+            dominant7: [0, 4, 7, 10],   // Dominant 7th
+            minor7: [0, 3, 7, 10],      // Minor 7th
+            major7: [0, 4, 7, 11],      // Major 7th
+            diminished: [0, 3, 6],      // Diminished triad
+            augmented: [0, 4, 8]        // Augmented triad
+        };
+
+        // Scale degrees to chord types mapping
+        const scaleChords = {
+            major: {
+                0: 'major',    // I
+                2: 'minor',    // ii
+                4: 'minor',    // iii
+                5: 'major',    // IV
+                7: 'major',    // V
+                9: 'minor',    // vi
+                11: 'diminished' // vii°
+            },
+            minor: {
+                0: 'minor',    // i
+                2: 'diminished', // ii°
+                3: 'major',    // III
+                5: 'minor',    // iv
+                7: 'minor',    // v
+                8: 'major',    // VI
+                10: 'major'    // VII
+            }
+        };
+
+        // State variables
+        let selectedNotes = new Set();
+        let activeOscillators = new Map();
+        let audioContext;
+        let currentCircleType = '12-tone';
+        let currentDisplayMode = 'sharps';
+        let currentKeyMode = 'major';
+        let currentInstrument = 'sine';
+        let currentNoteData = noteData12;
+        let currentOrder = circleOfFifths;
+
+        // Pattern Sequencer state
+        let sequencerEnabled = false;
+        let isPlaying = false;
+        let currentTempo = 120;
+        let currentSteps = 16;
+        let currentStep = 0;
+        let patternGrid = [];
+        let playbackInterval = null;
+        let availableNotes = [];
+        let chordMode = false;
+        let sequencerChords = [];  // Array to store chord data for each row
+
+        // Record Looper state
+        let isRecording = false;
+        let isLoopPlaying = false;
+        let isOverdubbing = false;
+        let recordedLoop = [];
+        let loopStartTime = 0;
+        let loopLength = 4; // in beats
+        let currentQuantize = '1/4';
+        let loopPlaybackInterval = null;
+        let loopProgressInterval = null;
+
+        function getAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        function calculateNotePositions(circleType) {
+            const positions = [];
+            const centerX = 50;
+            const centerY = 50;
+
+            let numPoints, radius;
+            switch (circleType) {
+                case '12-tone': numPoints = 12; radius = 40; break;
+                case '24-tone': numPoints = 24; radius = 40; break;
+                case 'harmonic': numPoints = 16; radius = 40; break;
+                case 'just': numPoints = 12; radius = 40; break;
+                default: numPoints = 12; radius = 40;
+            }
+
+            for (let i = 0; i < numPoints; i++) {
+                const angle = (i * (360 / numPoints) - 90) * Math.PI / 180;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                positions.push({ x: x, y: y });
+            }
+            return positions;
+        }
+
+        let notePositions = calculateNotePositions('12-tone');
+
+        function createNoteNodes() {
+            circleContainer.querySelectorAll('.note-node').forEach(node => node.remove());
+
+            currentOrder.forEach((noteIndex, positionIndex) => {
+                const noteNode = document.createElement('div');
+                noteNode.classList.add('note-node');
+                noteNode.dataset.noteIndex = noteIndex;
+
+                if (currentCircleType === '24-tone') {
+                    noteNode.classList.add('microtonal');
+                } else if (currentCircleType === 'harmonic') {
+                    noteNode.classList.add('harmonic');
+                } else if (currentCircleType === 'just') {
+                    noteNode.classList.add('just');
+                }
+
+                const pos = notePositions[positionIndex];
+                noteNode.style.left = `${pos.x}%`;
+                noteNode.style.top = `${pos.y}%`;
+
+                noteNode.addEventListener('click', handleNoteClick);
+                updateNoteDisplay(noteNode, noteIndex);
+                circleContainer.appendChild(noteNode);
+            });
+        }
+
+        function updateNoteDisplay(noteNode, noteIndex) {
+            const mainDiv = document.createElement('div');
+            mainDiv.className = 'main-note';
+            const altDiv = document.createElement('div');
+            altDiv.className = 'alt-note';
+
+            switch (currentCircleType) {
+                case '12-tone':
+                    const noteInfo = currentNoteData[noteIndex];
+                    switch (currentDisplayMode) {
+                        case 'sharps':
+                            mainDiv.textContent = noteInfo.sharp;
+                            if (noteInfo.sharp !== noteInfo.flat) {
+                                altDiv.textContent = `(${noteInfo.flat})`;
+                            }
+                            break;
+                        case 'flats':
+                            mainDiv.textContent = noteInfo.flat;
+                            if (noteInfo.sharp !== noteInfo.flat) {
+                                altDiv.textContent = `(${noteInfo.sharp})`;
+                            }
+                            break;
+                        case 'both':
+                            if (noteInfo.sharp !== noteInfo.flat) {
+                                mainDiv.textContent = noteInfo.sharp;
+                                altDiv.textContent = noteInfo.flat;
+                            } else {
+                                mainDiv.textContent = noteInfo.sharp;
+                            }
+                            break;
+                    }
+                    break;
+                case '24-tone':
+                    const note24 = noteData24[noteIndex];
+                    mainDiv.textContent = note24.name;
+                    altDiv.textContent = `${Math.round(note24.freq)}Hz`;
+                    break;
+                case 'harmonic':
+                    const harmonic = harmonicSeries[noteIndex];
+                    mainDiv.textContent = harmonic.name;
+                    altDiv.textContent = harmonic.ratio;
+                    break;
+                case 'just':
+                    const just = justIntonation[noteIndex];
+                    mainDiv.textContent = just.name;
+                    altDiv.textContent = just.ratio;
+                    break;
+            }
+
+            noteNode.innerHTML = '';
+            noteNode.appendChild(mainDiv);
+            if (altDiv.textContent) {
+                noteNode.appendChild(altDiv);
+            }
+        }
+
+        function handleNoteClick(event) {
+            const noteNode = event.target.closest('.note-node');
+            if (!noteNode) return;
+
+            const noteIndex = parseInt(noteNode.dataset.noteIndex);
+            const noteName = getCurrentNoteName(noteIndex);
+
+
+
+            // Check if a chord type is selected for building
+            const activeChordBtn = document.querySelector('.chord-btn.active');
+            if (activeChordBtn) {
+                const chordType = activeChordBtn.textContent;
+                buildChordFromRoot(noteIndex, chordType);
+                return;
+            }
+
+            // Normal mode behavior
+            if (selectedNotes.has(noteIndex)) {
+                selectedNotes.delete(noteIndex);
+                noteNode.classList.remove('selected');
+                stopNoteSound(noteName);
+            } else {
+                selectedNotes.add(noteIndex);
+                noteNode.classList.add('selected');
+                playNoteSound(noteIndex, noteName);
+            }
+
+            updateVisualization();
+            updateInfoDisplay();
+            updateKeyAnalysis();
+        }
+
+        function getCurrentNoteName(noteIndex) {
+            switch (currentCircleType) {
+                case '12-tone':
+                    const noteInfo = currentNoteData[noteIndex];
+                    switch (currentDisplayMode) {
+                        case 'sharps': return noteInfo.sharp;
+                        case 'flats': return noteInfo.flat;
+                        default: return noteInfo.main;
+                    }
+                case '24-tone': return noteData24[noteIndex].name;
+                case 'harmonic': return harmonicSeries[noteIndex].name;
+                case 'just': return justIntonation[noteIndex].name;
+                default: return currentNoteData[noteIndex].main;
+            }
+        }
+
+        function getNoteFrequency(noteIndex) {
+            switch (currentCircleType) {
+                case '12-tone': return currentNoteData[noteIndex].freq;
+                case '24-tone': return noteData24[noteIndex].freq;
+                case 'harmonic': return harmonicSeries[noteIndex].freq;
+                case 'just': return justIntonation[noteIndex].freq;
+                default: return 440;
+            }
+        }
+
+        function createInstrumentSound(context, freq, instrument) {
+            const now = context.currentTime;
+
+            switch (instrument) {
+                case 'sine':
+                    const sine = context.createOscillator();
+                    sine.type = 'sine';
+                    sine.frequency.setValueAtTime(freq, now);
+                    return sine;
+                case 'triangle':
+                    const triangle = context.createOscillator();
+                    triangle.type = 'triangle';
+                    triangle.frequency.setValueAtTime(freq, now);
+                    return triangle;
+                case 'sawtooth':
+                    const saw = context.createOscillator();
+                    saw.type = 'sawtooth';
+                    saw.frequency.setValueAtTime(freq, now);
+                    return saw;
+                case 'square':
+                    const square = context.createOscillator();
+                    square.type = 'square';
+                    square.frequency.setValueAtTime(freq, now);
+                    return square;
+                case 'bell':
+                    const bell1 = context.createOscillator();
+                    const bell2 = context.createOscillator();
+                    const bell3 = context.createOscillator();
+                    bell1.type = 'sine';
+                    bell2.type = 'sine';
+                    bell3.type = 'sine';
+                    bell1.frequency.setValueAtTime(freq, now);
+                    bell2.frequency.setValueAtTime(freq * 2.5, now);
+                    bell3.frequency.setValueAtTime(freq * 4.2, now);
+
+                    const bellGain1 = context.createGain();
+                    const bellGain2 = context.createGain();
+                    const bellGain3 = context.createGain();
+                    bellGain1.gain.setValueAtTime(0.6, now);
+                    bellGain2.gain.setValueAtTime(0.3, now);
+                    bellGain3.gain.setValueAtTime(0.1, now);
+
+                    bell1.connect(bellGain1);
+                    bell2.connect(bellGain2);
+                    bell3.connect(bellGain3);
+
+                    return { oscillators: [bell1, bell2, bell3], gains: [bellGain1, bellGain2, bellGain3] };
+                case 'pad':
+                    const pad1 = context.createOscillator();
+                    const pad2 = context.createOscillator();
+                    const pad3 = context.createOscillator();
+                    pad1.type = 'sawtooth';
+                    pad2.type = 'sawtooth';
+                    pad3.type = 'triangle';
+                    pad1.frequency.setValueAtTime(freq, now);
+                    pad2.frequency.setValueAtTime(freq * 1.005, now);
+                    pad3.frequency.setValueAtTime(freq * 0.5, now);
+
+                    const padGain1 = context.createGain();
+                    const padGain2 = context.createGain();
+                    const padGain3 = context.createGain();
+                    padGain1.gain.setValueAtTime(0.3, now);
+                    padGain2.gain.setValueAtTime(0.3, now);
+                    padGain3.gain.setValueAtTime(0.2, now);
+
+                    pad1.connect(padGain1);
+                    pad2.connect(padGain2);
+                    pad3.connect(padGain3);
+
+                    return { oscillators: [pad1, pad2, pad3], gains: [padGain1, padGain2, padGain3] };
+                case 'pluck':
+                    const pluck = context.createOscillator();
+                    pluck.type = 'triangle';
+                    pluck.frequency.setValueAtTime(freq, now);
+                    return pluck;
+                case 'organ':
+                    const org1 = context.createOscillator();
+                    const org2 = context.createOscillator();
+                    const org3 = context.createOscillator();
+                    org1.type = 'sine';
+                    org2.type = 'sine';
+                    org3.type = 'sine';
+                    org1.frequency.setValueAtTime(freq, now);
+                    org2.frequency.setValueAtTime(freq * 2, now);
+                    org3.frequency.setValueAtTime(freq * 3, now);
+
+                    const orgGain1 = context.createGain();
+                    const orgGain2 = context.createGain();
+                    const orgGain3 = context.createGain();
+                    orgGain1.gain.setValueAtTime(0.4, now);
+                    orgGain2.gain.setValueAtTime(0.3, now);
+                    orgGain3.gain.setValueAtTime(0.2, now);
+
+                    org1.connect(orgGain1);
+                    org2.connect(orgGain2);
+                    org3.connect(orgGain3);
+
+                    return { oscillators: [org1, org2, org3], gains: [orgGain1, orgGain2, orgGain3] };
+                case 'piano':
+                    const piano1 = context.createOscillator();
+                    const piano2 = context.createOscillator();
+                    const piano3 = context.createOscillator();
+                    piano1.type = 'triangle';
+                    piano2.type = 'sine';
+                    piano3.type = 'sawtooth';
+                    piano1.frequency.setValueAtTime(freq, now);
+                    piano2.frequency.setValueAtTime(freq * 2, now);
+                    piano3.frequency.setValueAtTime(freq * 4, now);
+
+                    const pianoGain1 = context.createGain();
+                    const pianoGain2 = context.createGain();
+                    const pianoGain3 = context.createGain();
+                    pianoGain1.gain.setValueAtTime(0.5, now);
+                    pianoGain2.gain.setValueAtTime(0.2, now);
+                    pianoGain3.gain.setValueAtTime(0.1, now);
+
+                    piano1.connect(pianoGain1);
+                    piano2.connect(pianoGain2);
+                    piano3.connect(pianoGain3);
+
+                    return { oscillators: [piano1, piano2, piano3], gains: [pianoGain1, pianoGain2, pianoGain3] };
+                case 'bass':
+                    const bass1 = context.createOscillator();
+                    const bass2 = context.createOscillator();
+                    bass1.type = 'sawtooth';
+                    bass2.type = 'square';
+                    bass1.frequency.setValueAtTime(freq * 0.5, now);
+                    bass2.frequency.setValueAtTime(freq * 0.5, now);
+
+                    const bassGain1 = context.createGain();
+                    const bassGain2 = context.createGain();
+                    bassGain1.gain.setValueAtTime(0.6, now);
+                    bassGain2.gain.setValueAtTime(0.2, now);
+
+                    bass1.connect(bassGain1);
+                    bass2.connect(bassGain2);
+
+                    return { oscillators: [bass1, bass2], gains: [bassGain1, bassGain2] };
+                case 'lead':
+                    const lead1 = context.createOscillator();
+                    const lead2 = context.createOscillator();
+                    lead1.type = 'sawtooth';
+                    lead2.type = 'square';
+                    lead1.frequency.setValueAtTime(freq, now);
+                    lead2.frequency.setValueAtTime(freq * 1.01, now);
+
+                    const leadGain1 = context.createGain();
+                    const leadGain2 = context.createGain();
+                    leadGain1.gain.setValueAtTime(0.4, now);
+                    leadGain2.gain.setValueAtTime(0.3, now);
+
+                    lead1.connect(leadGain1);
+                    lead2.connect(leadGain2);
+
+                    return { oscillators: [lead1, lead2], gains: [leadGain1, leadGain2] };
+                case 'choir':
+                    const choir1 = context.createOscillator();
+                    const choir2 = context.createOscillator();
+                    const choir3 = context.createOscillator();
+                    const choir4 = context.createOscillator();
+                    choir1.type = 'sine';
+                    choir2.type = 'sine';
+                    choir3.type = 'sine';
+                    choir4.type = 'sine';
+                    choir1.frequency.setValueAtTime(freq, now);
+                    choir2.frequency.setValueAtTime(freq * 1.002, now);
+                    choir3.frequency.setValueAtTime(freq * 0.998, now);
+                    choir4.frequency.setValueAtTime(freq * 2, now);
+
+                    const choirGain1 = context.createGain();
+                    const choirGain2 = context.createGain();
+                    const choirGain3 = context.createGain();
+                    const choirGain4 = context.createGain();
+                    choirGain1.gain.setValueAtTime(0.25, now);
+                    choirGain2.gain.setValueAtTime(0.25, now);
+                    choirGain3.gain.setValueAtTime(0.25, now);
+                    choirGain4.gain.setValueAtTime(0.15, now);
+
+                    choir1.connect(choirGain1);
+                    choir2.connect(choirGain2);
+                    choir3.connect(choirGain3);
+                    choir4.connect(choirGain4);
+
+                    return { oscillators: [choir1, choir2, choir3, choir4], gains: [choirGain1, choirGain2, choirGain3, choirGain4] };
+                case 'strings':
+                    const str1 = context.createOscillator();
+                    const str2 = context.createOscillator();
+                    const str3 = context.createOscillator();
+                    str1.type = 'sawtooth';
+                    str2.type = 'sawtooth';
+                    str3.type = 'triangle';
+                    str1.frequency.setValueAtTime(freq, now);
+                    str2.frequency.setValueAtTime(freq * 1.003, now);
+                    str3.frequency.setValueAtTime(freq * 2, now);
+
+                    const strGain1 = context.createGain();
+                    const strGain2 = context.createGain();
+                    const strGain3 = context.createGain();
+                    strGain1.gain.setValueAtTime(0.3, now);
+                    strGain2.gain.setValueAtTime(0.3, now);
+                    strGain3.gain.setValueAtTime(0.2, now);
+
+                    str1.connect(strGain1);
+                    str2.connect(strGain2);
+                    str3.connect(strGain3);
+
+                    return { oscillators: [str1, str2, str3], gains: [strGain1, strGain2, strGain3] };
+                case 'brass':
+                    const brass1 = context.createOscillator();
+                    const brass2 = context.createOscillator();
+                    const brass3 = context.createOscillator();
+                    brass1.type = 'sawtooth';
+                    brass2.type = 'square';
+                    brass3.type = 'triangle';
+                    brass1.frequency.setValueAtTime(freq, now);
+                    brass2.frequency.setValueAtTime(freq * 2, now);
+                    brass3.frequency.setValueAtTime(freq * 3, now);
+
+                    const brassGain1 = context.createGain();
+                    const brassGain2 = context.createGain();
+                    const brassGain3 = context.createGain();
+                    brassGain1.gain.setValueAtTime(0.4, now);
+                    brassGain2.gain.setValueAtTime(0.3, now);
+                    brassGain3.gain.setValueAtTime(0.2, now);
+
+                    brass1.connect(brassGain1);
+                    brass2.connect(brassGain2);
+                    brass3.connect(brassGain3);
+
+                    return { oscillators: [brass1, brass2, brass3], gains: [brassGain1, brassGain2, brassGain3] };
+                case 'flute':
+                    const flute1 = context.createOscillator();
+                    const flute2 = context.createOscillator();
+                    flute1.type = 'sine';
+                    flute2.type = 'triangle';
+                    flute1.frequency.setValueAtTime(freq, now);
+                    flute2.frequency.setValueAtTime(freq * 2, now);
+
+                    const fluteGain1 = context.createGain();
+                    const fluteGain2 = context.createGain();
+                    fluteGain1.gain.setValueAtTime(0.6, now);
+                    fluteGain2.gain.setValueAtTime(0.2, now);
+
+                    flute1.connect(fluteGain1);
+                    flute2.connect(fluteGain2);
+
+                    return { oscillators: [flute1, flute2], gains: [fluteGain1, fluteGain2] };
+                case 'guitar':
+                    const guitar1 = context.createOscillator();
+                    const guitar2 = context.createOscillator();
+                    const guitar3 = context.createOscillator();
+                    guitar1.type = 'triangle';
+                    guitar2.type = 'sawtooth';
+                    guitar3.type = 'square';
+                    guitar1.frequency.setValueAtTime(freq, now);
+                    guitar2.frequency.setValueAtTime(freq * 2, now);
+                    guitar3.frequency.setValueAtTime(freq * 3, now);
+
+                    const guitarGain1 = context.createGain();
+                    const guitarGain2 = context.createGain();
+                    const guitarGain3 = context.createGain();
+                    guitarGain1.gain.setValueAtTime(0.5, now);
+                    guitarGain2.gain.setValueAtTime(0.2, now);
+                    guitarGain3.gain.setValueAtTime(0.1, now);
+
+                    guitar1.connect(guitarGain1);
+                    guitar2.connect(guitarGain2);
+                    guitar3.connect(guitarGain3);
+
+                    return { oscillators: [guitar1, guitar2, guitar3], gains: [guitarGain1, guitarGain2, guitarGain3] };
+                case 'ambient':
+                    const amb1 = context.createOscillator();
+                    const amb2 = context.createOscillator();
+                    const amb3 = context.createOscillator();
+                    const amb4 = context.createOscillator();
+                    amb1.type = 'sine';
+                    amb2.type = 'triangle';
+                    amb3.type = 'sine';
+                    amb4.type = 'sine';
+                    amb1.frequency.setValueAtTime(freq, now);
+                    amb2.frequency.setValueAtTime(freq * 1.5, now);
+                    amb3.frequency.setValueAtTime(freq * 0.5, now);
+                    amb4.frequency.setValueAtTime(freq * 3, now);
+
+                    const ambGain1 = context.createGain();
+                    const ambGain2 = context.createGain();
+                    const ambGain3 = context.createGain();
+                    const ambGain4 = context.createGain();
+                    ambGain1.gain.setValueAtTime(0.2, now);
+                    ambGain2.gain.setValueAtTime(0.15, now);
+                    ambGain3.gain.setValueAtTime(0.25, now);
+                    ambGain4.gain.setValueAtTime(0.1, now);
+
+                    amb1.connect(ambGain1);
+                    amb2.connect(ambGain2);
+                    amb3.connect(ambGain3);
+                    amb4.connect(ambGain4);
+
+                    return { oscillators: [amb1, amb2, amb3, amb4], gains: [ambGain1, ambGain2, ambGain3, ambGain4] };
+                default:
+                    const defaultOsc = context.createOscillator();
+                    defaultOsc.type = 'sine';
+                    defaultOsc.frequency.setValueAtTime(freq, now);
+                    return defaultOsc;
+            }
+        }
+
+        function playNoteSound(noteIndex, noteName) {
+            const freq = getNoteFrequency(noteIndex);
+            if (!freq) return;
+
+            // Record the note if recording or overdubbing
+            if (isRecording || isOverdubbing) {
+                recordNote(noteIndex, noteName);
+            }
+
+            const context = getAudioContext();
+            const now = context.currentTime;
+
+            const mainGain = context.createGain();
+            mainGain.gain.setValueAtTime(0, now);
+            mainGain.gain.linearRampToValueAtTime(0.25, now + 0.05);
+
+            const filter = context.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(3000, now);
+            filter.Q.setValueAtTime(1, now);
+
+            const instrument = createInstrumentSound(context, freq, currentInstrument);
+
+            if (instrument.oscillators) {
+                const instrumentGain = context.createGain();
+                instrumentGain.gain.setValueAtTime(0.8, now);
+
+                instrument.gains.forEach(gain => {
+                    gain.connect(instrumentGain);
+                });
+
+                instrumentGain.connect(filter);
+                filter.connect(mainGain);
+                mainGain.connect(context.destination);
+
+                instrument.oscillators.forEach(osc => osc.start(now));
+
+                activeOscillators.set(noteName, {
+                    oscillators: instrument.oscillators,
+                    gains: [...instrument.gains, instrumentGain, mainGain]
+                });
+            } else {
+                instrument.connect(filter);
+                filter.connect(mainGain);
+                mainGain.connect(context.destination);
+
+                if (currentInstrument === 'pluck') {
+                    mainGain.gain.exponentialRampToValueAtTime(0.01, now + 2);
+                }
+
+                instrument.start(now);
+                activeOscillators.set(noteName, {
+                    oscillators: [instrument],
+                    gains: [mainGain]
+                });
+            }
+        }
+
+        function stopNoteSound(noteName) {
+            const instrument = activeOscillators.get(noteName);
+            if (instrument) {
+                const context = getAudioContext();
+                const now = context.currentTime;
+
+                instrument.gains.forEach(gain => {
+                    if (gain.gain) {
+                        gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                    }
+                });
+
+                setTimeout(() => {
+                    instrument.oscillators.forEach(osc => {
+                        try { osc.stop(); osc.disconnect(); } catch (e) { }
+                    });
+                    instrument.gains.forEach(gain => {
+                        try { gain.disconnect(); } catch (e) { }
+                    });
+                }, 150);
+
+                activeOscillators.delete(noteName);
+            }
+        }
+
+        function handleCircleTypeChange() {
+            currentCircleType = circleTypeSelect.value;
+
+            switch (currentCircleType) {
+                case '12-tone': currentNoteData = noteData12; currentOrder = circleOfFifths; break;
+                case '24-tone': currentNoteData = noteData24; currentOrder = circle24Order; break;
+                case 'harmonic': currentNoteData = harmonicSeries; currentOrder = harmonicOrder; break;
+                case 'just': currentNoteData = justIntonation; currentOrder = justOrder; break;
+            }
+
+            selectedNotes.clear();
+            activeOscillators.forEach(instrument => {
+                instrument.oscillators.forEach(osc => {
+                    try { osc.stop(); osc.disconnect(); } catch (e) { }
+                });
+                instrument.gains.forEach(gain => {
+                    try { gain.disconnect(); } catch (e) { }
+                });
+            });
+            activeOscillators.clear();
+
+            notePositions = calculateNotePositions(currentCircleType);
+            createNoteNodes();
+            updateChordButtons(); // Update chord buttons for new system
+            updateVisualization();
+            updateInfoDisplay();
+        }
+
+        function handleReset() {
+            document.querySelectorAll('.note-node.selected').forEach(node => {
+                node.classList.remove('selected');
+            });
+
+            activeOscillators.forEach(instrument => {
+                instrument.oscillators.forEach(osc => {
+                    try { osc.stop(); osc.disconnect(); } catch (e) { }
+                });
+                instrument.gains.forEach(gain => {
+                    try { gain.disconnect(); } catch (e) { }
+                });
+            });
+            activeOscillators.clear();
+
+            selectedNotes.clear();
+            svgCanvas.innerHTML = '';
+
+            infoDisplay.textContent = 'Click notes on the circle to explore musical relationships and chord progressions.';
+            progressionDisplay.textContent = 'Select notes or use chord buttons to build progressions';
+            keyAnalysis.textContent = 'Select notes to see key signature information';
+        }
+
+        function handleInstrumentChange() {
+            currentInstrument = instrumentSelect.value;
+
+            const currentlySelected = Array.from(selectedNotes);
+            currentlySelected.forEach(noteIndex => {
+                const noteName = getCurrentNoteName(noteIndex);
+                stopNoteSound(noteName);
+                setTimeout(() => {
+                    playNoteSound(noteIndex, noteName);
+                }, 200);
+            });
+        }
+
+        function updateVisualization() {
+            svgCanvas.innerHTML = '';
+
+            if (selectedNotes.size < 1) return;
+
+            const containerRect = circleContainer.getBoundingClientRect();
+            const svgWidth = containerRect.width;
+            const svgHeight = containerRect.height;
+
+            svgCanvas.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+            const centerSvgX = svgWidth / 2;
+            const centerSvgY = svgHeight / 2;
+
+            const selectedNoteIndices = Array.from(selectedNotes).sort((a, b) => a - b);
+
+            // Draw radial lines from center to each selected note
+            selectedNoteIndices.forEach(index => {
+                const noteNode = document.querySelector(`[data-note-index="${index}"]`);
+                const nodeRect = noteNode.getBoundingClientRect();
+
+                const noteSvgX = nodeRect.left - containerRect.left + (nodeRect.width / 2);
+                const noteSvgY = nodeRect.top - containerRect.top + (nodeRect.height / 2);
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', centerSvgX);
+                line.setAttribute('y1', centerSvgY);
+                line.setAttribute('x2', noteSvgX);
+                line.setAttribute('y2', noteSvgY);
+                line.classList.add('radial-line');
+                svgCanvas.appendChild(line);
+            });
+
+            // Draw polygon lines connecting adjacent selected notes
+            if (selectedNoteIndices.length >= 2) {
+                for (let i = 0; i < selectedNoteIndices.length; i++) {
+                    const startIndex = selectedNoteIndices[i];
+                    const endIndex = selectedNoteIndices[(i + 1) % selectedNoteIndices.length];
+
+                    const startNode = document.querySelector(`[data-note-index="${startIndex}"]`);
+                    const endNode = document.querySelector(`[data-note-index="${endIndex}"]`);
+
+                    const startRect = startNode.getBoundingClientRect();
+                    const endRect = endNode.getBoundingClientRect();
+
+                    const startSvgX = startRect.left - containerRect.left + (startRect.width / 2);
+                    const startSvgY = startRect.top - containerRect.top + (startRect.height / 2);
+
+                    const endSvgX = endRect.left - containerRect.left + (endRect.width / 2);
+                    const endSvgY = endRect.top - containerRect.top + (endRect.height / 2);
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', startSvgX);
+                    line.setAttribute('y1', startSvgY);
+                    line.setAttribute('x2', endSvgX);
+                    line.setAttribute('y2', endSvgY);
+                    svgCanvas.appendChild(line);
+                }
+            }
+        }
+
+        function updateInfoDisplay() {
+            const currentNotes = Array.from(selectedNotes).sort((a, b) => a - b);
+            const selectedNoteNames = currentNotes.map(index => getCurrentNoteName(index));
+
+            if (currentNotes.length === 0) {
+                infoDisplay.innerHTML = `Click notes on the ${currentCircleType} circle to explore musical relationships.`;
+                return;
+            }
+
+            let displayHTML = `<strong>Selected Notes:</strong> ${selectedNoteNames.join(', ')}<br><br>`;
+
+            switch (currentCircleType) {
+                case '12-tone':
+                    if (currentNotes.length === 2) {
+                        const interval = Math.min(Math.abs(currentNotes[0] - currentNotes[1]), 12 - Math.abs(currentNotes[0] - currentNotes[1]));
+                        displayHTML += `<strong>Interval:</strong> ${intervalNames[interval]}<br>`;
+                    } else if (currentNotes.length >= 3) {
+                        displayHTML += `<strong>Chord Analysis:</strong><br>`;
+                        displayHTML += `• Custom chord pattern<br>`;
+                    }
+                    break;
+                case '24-tone':
+                    displayHTML += `<strong>Microtonal Analysis:</strong><br>`;
+                    currentNotes.forEach(index => {
+                        const note = noteData24[index];
+                        displayHTML += `• ${note.name}: ${Math.round(note.freq)}Hz (${note.type})<br>`;
+                    });
+                    break;
+                case 'harmonic':
+                    displayHTML += `<strong>Harmonic Series Analysis:</strong><br>`;
+                    currentNotes.forEach(index => {
+                        const harmonic = harmonicSeries[index];
+                        displayHTML += `• ${harmonic.name}: ${harmonic.harmonic}th harmonic (${harmonic.ratio})<br>`;
+                    });
+                    break;
+                case 'just':
+                    displayHTML += `<strong>Just Intonation Analysis:</strong><br>`;
+                    currentNotes.forEach(index => {
+                        const just = justIntonation[index];
+                        displayHTML += `• ${just.name}: ${just.ratio} (${just.cents} cents)<br>`;
+                    });
+                    break;
+            }
+
+            infoDisplay.innerHTML = displayHTML;
+        }
+
+        function createChordButtons() {
+            updateChordButtons();
+        }
+
+        function updateChordButtons() {
+            // Clear existing buttons
+            chordButtonsContainer.innerHTML = '';
+
+            // Get chord types for current system
+            const systemChords = chordPatterns[currentCircleType] || chordPatterns["12-tone"];
+            const chordTypes = Object.keys(systemChords);
+
+            chordTypes.forEach(chordType => {
+                const button = document.createElement('button');
+                button.className = 'chord-btn';
+                button.textContent = chordType;
+                button.addEventListener('click', () => selectChordType(chordType, button));
+                chordButtonsContainer.appendChild(button);
+            });
+        }
+
+        function selectChordType(chordType, button) {
+            const wasActive = button.classList.contains('active');
+
+            // Toggle button state
+            document.querySelectorAll('.chord-btn').forEach(btn => btn.classList.remove('active'));
+
+            if (!wasActive) {
+                button.classList.add('active');
+                highlightChordType(chordType);
+            } else {
+                clearChordHighlights();
+            }
+        }
+
+        function highlightChordType(chordType) {
+            const systemChords = chordPatterns[currentCircleType] || chordPatterns["12-tone"];
+            const pattern = systemChords[chordType];
+            if (!pattern) return;
+
+            // Find all possible chords of this type in the current system
+            const possibleChords = [];
+            const numNotes = currentCircleType === '12-tone' ? 12 :
+                currentCircleType === '24-tone' ? 24 :
+                    currentCircleType === 'harmonic' ? 16 : 12;
+
+            // Show first few examples
+            const maxExamples = Math.min(8, numNotes);
+            for (let root = 0; root < maxExamples; root++) {
+                const rootName = getCurrentNoteName(root);
+                possibleChords.push(`${rootName} ${chordType}`);
+            }
+
+            let displayText = `Available ${chordType} chords:\n${possibleChords.join(', ')}`;
+
+            // Add system-specific information
+            switch (currentCircleType) {
+                case '24-tone':
+                    displayText += `\n\nMicrotonal chords with quarter-tone intervals`;
+                    break;
+                case 'harmonic':
+                    displayText += `\n\nNatural harmonic chords based on overtone ratios`;
+                    break;
+                case 'just':
+                    displayText += `\n\nPure ratio chords with perfect mathematical relationships`;
+                    break;
+                default:
+                    displayText += `\n\nTraditional Western harmony chords`;
+            }
+
+            displayText += `\n\nClick a root note on the circle to build this chord type.`;
+            updateProgressionDisplay(displayText);
+        }
+
+        function clearChordHighlights() {
+            updateProgressionDisplay('Select notes or use chord buttons to build progressions');
+        }
+
+        function updateProgressionDisplay(text) {
+            progressionDisplay.textContent = text;
+        }
+
+        function buildChordFromRoot(rootIndex, chordType) {
+            const systemChords = chordPatterns[currentCircleType] || chordPatterns["12-tone"];
+            const pattern = systemChords[chordType];
+            if (!pattern) return;
+
+            // Clear current selection
+            selectedNotes.clear();
+            document.querySelectorAll('.note-node.selected').forEach(node => {
+                node.classList.remove('selected');
+            });
+
+            // Stop all sounds
+            activeOscillators.forEach(instrument => {
+                instrument.oscillators.forEach(osc => {
+                    try { osc.stop(); osc.disconnect(); } catch (e) { }
+                });
+                instrument.gains.forEach(gain => {
+                    try { gain.disconnect(); } catch (e) { }
+                });
+            });
+            activeOscillators.clear();
+
+            // Build the chord based on current system
+            const numNotes = currentCircleType === '12-tone' ? 12 :
+                currentCircleType === '24-tone' ? 24 :
+                    currentCircleType === 'harmonic' ? 16 : 12;
+
+            const chordNotes = [rootIndex, ...pattern.map(interval => (rootIndex + interval) % numNotes)];
+
+            chordNotes.forEach(noteIndex => {
+                selectedNotes.add(noteIndex);
+                const noteNode = document.querySelector(`[data-note-index="${noteIndex}"]`);
+                if (noteNode) {
+                    noteNode.classList.add('selected');
+                    const noteName = getCurrentNoteName(noteIndex);
+                    playNoteSound(noteIndex, noteName);
+                }
+            });
+
+            updateVisualization();
+            updateInfoDisplay();
+            updateKeyAnalysis();
+
+            const rootName = getCurrentNoteName(rootIndex);
+            updateProgressionDisplay(`Built ${rootName} ${chordType} chord: ${chordNotes.map(n => getCurrentNoteName(n)).join(', ')}`);
+        }
+
+        function handleDisplayModeChange() {
+            currentDisplayMode = displayModeSelect.value;
+            document.querySelectorAll('.note-node').forEach(node => {
+                const noteIndex = parseInt(node.dataset.noteIndex);
+                updateNoteDisplay(node, noteIndex);
+            });
+            updateInfoDisplay();
+            updateKeyAnalysis();
+        }
+
+        function handleKeyModeChange() {
+            currentKeyMode = keyModeSelect.value;
+            updateKeyAnalysis();
+        }
+
+        // Key Analysis Functions
+        function updateKeyAnalysis() {
+            if (selectedNotes.size === 0) {
+                keyAnalysis.innerHTML = 'Select notes to see key signature information';
+                return;
+            }
+
+            const selectedNoteNames = Array.from(selectedNotes).map(index => getCurrentNoteName(index));
+            let analysisHTML = `<strong>Selected Notes:</strong> ${selectedNoteNames.join(', ')}<br><br>`;
+
+            // Provide analysis based on the current tuning system
+            if (currentCircleType === '12-tone') {
+                analysisHTML += `<strong>Possible Keys:</strong><br>`;
+
+                const majorKeys = findPossibleKeys(selectedNoteNames, 'major');
+                if (majorKeys.length > 0) {
+                    analysisHTML += `<strong>Major:</strong> ${majorKeys.join(', ')}<br>`;
+                }
+
+                const minorKeys = findPossibleKeys(selectedNoteNames, 'minor');
+                if (minorKeys.length > 0) {
+                    analysisHTML += `<strong>Minor:</strong> ${minorKeys.join(', ')}<br>`;
+                }
+
+                if (majorKeys.length === 0 && minorKeys.length === 0) {
+                    analysisHTML += 'No clear key signature match<br>';
+                }
+
+                // Add scale degree analysis if we have a clear key
+                if (majorKeys.length === 1) {
+                    analysisHTML += `<br><strong>Scale Degrees in ${majorKeys[0]} Major:</strong><br>`;
+                    analysisHTML += getScaleDegrees(selectedNoteNames, majorKeys[0], 'major');
+                } else if (minorKeys.length === 1) {
+                    analysisHTML += `<br><strong>Scale Degrees in ${minorKeys[0]} Minor:</strong><br>`;
+                    analysisHTML += getScaleDegrees(selectedNoteNames, minorKeys[0], 'minor');
+                }
+            } else if (currentCircleType === '24-tone') {
+                analysisHTML += `<strong>Microtonal Analysis:</strong><br>`;
+                analysisHTML += analyzeMicrotonalIntervals(Array.from(selectedNotes));
+            } else if (currentCircleType === 'harmonic') {
+                analysisHTML += `<strong>Harmonic Series Analysis:</strong><br>`;
+                analysisHTML += analyzeHarmonicSeries(Array.from(selectedNotes));
+            } else if (currentCircleType === 'just') {
+                analysisHTML += `<strong>Just Intonation Analysis:</strong><br>`;
+                analysisHTML += analyzeJustIntonation(Array.from(selectedNotes));
+            }
+
+            keyAnalysis.innerHTML = analysisHTML;
+        }
+
+        function findPossibleKeys(noteNames, mode) {
+            const possibleKeys = [];
+            const keyData = {
+                major: {
+                    "C": { sharps: 0, flats: 0 }, "G": { sharps: 1, flats: 0 }, "D": { sharps: 2, flats: 0 },
+                    "A": { sharps: 3, flats: 0 }, "E": { sharps: 4, flats: 0 }, "B": { sharps: 5, flats: 0 },
+                    "F#": { sharps: 6, flats: 0 }, "F": { sharps: 0, flats: 1 }, "B♭": { sharps: 0, flats: 2 },
+                    "E♭": { sharps: 0, flats: 3 }, "A♭": { sharps: 0, flats: 4 }, "D♭": { sharps: 0, flats: 5 },
+                    "G♭": { sharps: 0, flats: 6 }
+                },
+                minor: {
+                    "A": { sharps: 0, flats: 0 }, "E": { sharps: 1, flats: 0 }, "B": { sharps: 2, flats: 0 },
+                    "F#": { sharps: 3, flats: 0 }, "C#": { sharps: 4, flats: 0 }, "G#": { sharps: 5, flats: 0 },
+                    "D#": { sharps: 6, flats: 0 }, "D": { sharps: 0, flats: 1 }, "G": { sharps: 0, flats: 2 },
+                    "C": { sharps: 0, flats: 3 }, "F": { sharps: 0, flats: 4 }, "B♭": { sharps: 0, flats: 5 },
+                    "E♭": { sharps: 0, flats: 6 }
+                }
+            };
+
+            for (const [key, signature] of Object.entries(keyData[mode])) {
+                const keyScale = generateScale(key, mode);
+                const containsAllNotes = noteNames.every(note =>
+                    keyScale.some(scaleNote =>
+                        scaleNote === note ||
+                        (note.includes('#') && scaleNote === note.replace('#', '♯')) ||
+                        (note.includes('♭') && scaleNote === note.replace('♭', '♭'))
+                    )
+                );
+
+                if (containsAllNotes) {
+                    possibleKeys.push(key);
+                }
+            }
+
+            return possibleKeys;
+        }
+
+        function generateScale(key, mode) {
+            const majorPattern = [0, 2, 4, 5, 7, 9, 11];
+            const minorPattern = [0, 2, 3, 5, 7, 8, 10];
+            const pattern = mode === 'major' ? majorPattern : minorPattern;
+
+            const keyIndex = noteData12.findIndex(note =>
+                note.sharp === key || note.flat === key || note.main === key
+            );
+
+            if (keyIndex === -1) return [];
+
+            return pattern.map(interval => {
+                const noteIndex = (keyIndex + interval) % 12;
+                return getCurrentNoteName(noteIndex);
+            });
+        }
+
+        function getScaleDegrees(noteNames, key, mode) {
+            const scale = generateScale(key, mode);
+            const degreeNames = mode === 'major'
+                ? ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°']
+                : ['i', 'ii°', 'III', 'iv', 'v', 'VI', 'VII'];
+
+            return noteNames.map(note => {
+                const scaleIndex = scale.indexOf(note);
+                if (scaleIndex !== -1) {
+                    return `${note} = ${degreeNames[scaleIndex]}`;
+                }
+                return `${note} = (not in scale)`;
+            }).join('<br>');
+        }
+
+        // Extended Analysis Functions for Different Tuning Systems
+        function analyzeMicrotonalIntervals(selectedIndices) {
+            if (selectedIndices.length < 2) {
+                return 'Select at least 2 notes for interval analysis';
+            }
+
+            let analysisHTML = '';
+            const intervals = [];
+
+            for (let i = 0; i < selectedIndices.length - 1; i++) {
+                for (let j = i + 1; j < selectedIndices.length; j++) {
+                    const interval = Math.abs(selectedIndices[j] - selectedIndices[i]);
+                    const quarterToneInterval = interval * 0.5; // Each step is a quarter tone
+                    intervals.push({
+                        notes: `${getCurrentNoteName(selectedIndices[i])} - ${getCurrentNoteName(selectedIndices[j])}`,
+                        interval: quarterToneInterval,
+                        cents: interval * 50 // Each quarter tone = 50 cents
+                    });
+                }
+            }
+
+            analysisHTML += '<strong>Microtonal Intervals:</strong><br>';
+            intervals.forEach(int => {
+                const intervalName = int.interval === 0.5 ? 'Quarter tone' :
+                    int.interval === 1 ? 'Semitone' :
+                        int.interval === 1.5 ? 'Three-quarter tone' :
+                            int.interval === 2 ? 'Whole tone' :
+                                `${int.interval} quarter tones`;
+                analysisHTML += `${int.notes}: ${intervalName} (${int.cents} cents)<br>`;
+            });
+
+            // Add harmonic analysis
+            if (selectedIndices.length >= 3) {
+                analysisHTML += '<br><strong>Microtonal Harmony:</strong><br>';
+                const avgInterval = intervals.reduce((sum, int) => sum + int.interval, 0) / intervals.length;
+                if (avgInterval < 1) {
+                    analysisHTML += 'Dense microtonal cluster<br>';
+                } else if (avgInterval < 2) {
+                    analysisHTML += 'Chromatic microtonal harmony<br>';
+                } else {
+                    analysisHTML += 'Wide microtonal intervals<br>';
+                }
+            }
+
+            return analysisHTML;
+        }
+
+        function analyzeHarmonicSeries(selectedIndices) {
+            if (selectedIndices.length === 0) {
+                return 'Select harmonics for analysis';
+            }
+
+            let analysisHTML = '';
+            const harmonics = selectedIndices.map(index => {
+                const harmonic = harmonicSeries[index];
+                return {
+                    index: index + 1,
+                    name: harmonic.name,
+                    harmonic: harmonic.harmonic,
+                    ratio: harmonic.ratio,
+                    freq: harmonic.freq
+                };
+            });
+
+            analysisHTML += '<strong>Selected Harmonics:</strong><br>';
+            harmonics.forEach(h => {
+                analysisHTML += `${h.name}: ${h.harmonic}th harmonic (${h.ratio})<br>`;
+            });
+
+            if (harmonics.length >= 2) {
+                analysisHTML += '<br><strong>Harmonic Relationships:</strong><br>';
+
+                // Check for octaves
+                const octaveRelations = [];
+                for (let i = 0; i < harmonics.length - 1; i++) {
+                    for (let j = i + 1; j < harmonics.length; j++) {
+                        const ratio = harmonics[j].harmonic / harmonics[i].harmonic;
+                        if (ratio === 2 || ratio === 0.5) {
+                            octaveRelations.push(`${harmonics[i].name} - ${harmonics[j].name}: Octave`);
+                        } else if (ratio === 1.5 || ratio === 2 / 3) {
+                            octaveRelations.push(`${harmonics[i].name} - ${harmonics[j].name}: Perfect Fifth`);
+                        } else if (ratio === 1.25 || ratio === 0.8) {
+                            octaveRelations.push(`${harmonics[i].name} - ${harmonics[j].name}: Major Third`);
+                        }
+                    }
+                }
+
+                if (octaveRelations.length > 0) {
+                    analysisHTML += octaveRelations.join('<br>') + '<br>';
+                } else {
+                    analysisHTML += 'Complex harmonic relationships<br>';
+                }
+
+                // Analyze consonance
+                const avgHarmonic = harmonics.reduce((sum, h) => sum + h.harmonic, 0) / harmonics.length;
+                if (avgHarmonic <= 8) {
+                    analysisHTML += '<br><strong>Consonance:</strong> High (lower harmonics)<br>';
+                } else if (avgHarmonic <= 12) {
+                    analysisHTML += '<br><strong>Consonance:</strong> Moderate<br>';
+                } else {
+                    analysisHTML += '<br><strong>Consonance:</strong> Complex (higher harmonics)<br>';
+                }
+            }
+
+            return analysisHTML;
+        }
+
+        function analyzeJustIntonation(selectedIndices) {
+            if (selectedIndices.length === 0) {
+                return 'Select notes for just intonation analysis';
+            }
+
+            let analysisHTML = '';
+            const justNotes = selectedIndices.map(index => {
+                const note = justIntonation[index];
+                return {
+                    name: note.name,
+                    ratio: note.ratio,
+                    cents: note.cents,
+                    freq: note.freq
+                };
+            });
+
+            analysisHTML += '<strong>Just Intonation Ratios:</strong><br>';
+            justNotes.forEach(note => {
+                analysisHTML += `${note.name}: ${note.ratio} (${note.cents} cents)<br>`;
+            });
+
+            if (justNotes.length >= 2) {
+                analysisHTML += '<br><strong>Interval Analysis:</strong><br>';
+
+                for (let i = 0; i < justNotes.length - 1; i++) {
+                    for (let j = i + 1; j < justNotes.length; j++) {
+                        const centsDiff = Math.abs(justNotes[j].cents - justNotes[i].cents);
+                        let intervalName = '';
+
+                        if (centsDiff < 50) intervalName = 'Unison/Comma';
+                        else if (centsDiff < 150) intervalName = 'Minor 2nd';
+                        else if (centsDiff < 250) intervalName = 'Major 2nd';
+                        else if (centsDiff < 350) intervalName = 'Minor 3rd';
+                        else if (centsDiff < 450) intervalName = 'Major 3rd';
+                        else if (centsDiff < 550) intervalName = 'Perfect 4th';
+                        else if (centsDiff < 650) intervalName = 'Tritone';
+                        else if (centsDiff < 750) intervalName = 'Perfect 5th';
+                        else if (centsDiff < 850) intervalName = 'Minor 6th';
+                        else if (centsDiff < 950) intervalName = 'Major 6th';
+                        else if (centsDiff < 1050) intervalName = 'Minor 7th';
+                        else if (centsDiff < 1150) intervalName = 'Major 7th';
+                        else intervalName = 'Octave+';
+
+                        analysisHTML += `${justNotes[i].name} - ${justNotes[j].name}: ${intervalName} (${centsDiff.toFixed(0)} cents)<br>`;
+                    }
+                }
+
+                // Analyze tuning purity
+                analysisHTML += '<br><strong>Tuning Characteristics:</strong><br>';
+                const avgCents = justNotes.reduce((sum, note) => sum + note.cents, 0) / justNotes.length;
+                if (avgCents < 400) {
+                    analysisHTML += 'Lower register - pure intervals<br>';
+                } else if (avgCents < 800) {
+                    analysisHTML += 'Middle register - balanced tuning<br>';
+                } else {
+                    analysisHTML += 'Upper register - complex ratios<br>';
+                }
+            }
+
+            return analysisHTML;
+        }
+
+        // Educational Panel Functions
+        function createEducationalPanels() {
+            try {
+                createIllusionButtons();
+                createGeometryButtons();
+                createPhysicsButtons();
+                console.log('Educational panels created successfully');
+            } catch (error) {
+                console.error('Error creating educational panels:', error);
+            }
+        }
+
+        function createIllusionButtons() {
+            try {
+                if (!illusionButtonsContainer) {
+                    console.error('Illusion buttons container not found');
+                    return;
+                }
+                illusionButtonsContainer.innerHTML = '';
+                Object.keys(audioIllusions).forEach(illusionType => {
+                    const button = document.createElement('button');
+                    button.className = 'chord-btn';
+                    button.textContent = illusionType;
+                    button.addEventListener('click', () => selectIllusion(illusionType, button));
+                    illusionButtonsContainer.appendChild(button);
+                });
+                console.log('Illusion buttons created:', Object.keys(audioIllusions).length);
+            } catch (error) {
+                console.error('Error creating illusion buttons:', error);
+            }
+        }
+
+        function createGeometryButtons() {
+            try {
+                if (!geometryButtonsContainer) {
+                    console.error('Geometry buttons container not found');
+                    return;
+                }
+                geometryButtonsContainer.innerHTML = '';
+                Object.keys(sacredGeometry).forEach(geometryType => {
+                    const button = document.createElement('button');
+                    button.className = 'chord-btn';
+                    button.textContent = geometryType;
+                    button.addEventListener('click', () => selectGeometry(geometryType, button));
+                    geometryButtonsContainer.appendChild(button);
+                });
+                console.log('Geometry buttons created:', Object.keys(sacredGeometry).length);
+            } catch (error) {
+                console.error('Error creating geometry buttons:', error);
+            }
+        }
+
+        function createPhysicsButtons() {
+            try {
+                if (!physicsButtonsContainer) {
+                    console.error('Physics buttons container not found');
+                    return;
+                }
+                physicsButtonsContainer.innerHTML = '';
+                Object.keys(resonancePhysics).forEach(physicsType => {
+                    const button = document.createElement('button');
+                    button.className = 'chord-btn';
+                    button.textContent = physicsType;
+                    button.addEventListener('click', () => selectPhysics(physicsType, button));
+                    physicsButtonsContainer.appendChild(button);
+                });
+                console.log('Physics buttons created:', Object.keys(resonancePhysics).length);
+            } catch (error) {
+                console.error('Error creating physics buttons:', error);
+            }
+        }
+
+        function selectIllusion(illusionType, button) {
+            const wasActive = button.classList.contains('active');
+            document.querySelectorAll('#illusion-buttons .chord-btn').forEach(btn => btn.classList.remove('active'));
+
+            if (!wasActive) {
+                button.classList.add('active');
+                demonstrateIllusion(illusionType);
+            } else {
+                illusionAnalysis.innerHTML = 'Explore auditory illusions and psychoacoustic phenomena';
+                clearAllSelections();
+            }
+        }
+
+        function selectGeometry(geometryType, button) {
+            const wasActive = button.classList.contains('active');
+            document.querySelectorAll('#geometry-buttons .chord-btn').forEach(btn => btn.classList.remove('active'));
+
+            if (!wasActive) {
+                button.classList.add('active');
+                demonstrateGeometry(geometryType);
+            } else {
+                geometryAnalysis.innerHTML = 'Discover mathematical patterns and sacred ratios in music';
+                clearAllSelections();
+            }
+        }
+
+        function selectPhysics(physicsType, button) {
+            const wasActive = button.classList.contains('active');
+            document.querySelectorAll('#physics-buttons .chord-btn').forEach(btn => btn.classList.remove('active'));
+
+            if (!wasActive) {
+                button.classList.add('active');
+                demonstratePhysics(physicsType);
+            } else {
+                physicsAnalysis.innerHTML = 'Explore physical properties of sound and resonance';
+                clearAllSelections();
+            }
+        }
+
+        function demonstrateIllusion(illusionType) {
+            const illusion = audioIllusions[illusionType];
+            if (!illusion) return;
+
+            // Clear and select the pattern
+            clearAllSelections();
+
+            // Use sequence mode for illusions that work better sequentially
+            const sequentialIllusions = ['Shepard Tone', 'Risset Rhythm', 'Scale Illusion', 'Tritone Paradox'];
+            const playMode = sequentialIllusions.includes(illusionType) ? 'sequence' : 'chord';
+            selectPattern(illusion.pattern, true, playMode);
+
+            // Update analysis display
+            let analysisHTML = `<strong>${illusionType}</strong><br><br>`;
+            analysisHTML += `<strong>Description:</strong> ${illusion.description}<br><br>`;
+            analysisHTML += `<strong>How it works:</strong> ${illusion.explanation}<br><br>`;
+            analysisHTML += `<strong>Pattern:</strong> ${illusion.pattern.map(i => getCurrentNoteName(i)).join(', ')}<br><br>`;
+
+            // Add specific instructions based on illusion type
+            if (illusionType === "Shepard Tone") {
+                analysisHTML += `<em>Play these notes in sequence repeatedly to experience the endless ascending effect.</em>`;
+            } else if (illusionType === "Phantom Fundamental") {
+                analysisHTML += `<em>Play these harmonics together - your brain will "hear" a bass note that isn't there.</em>`;
+            } else if (illusionType === "Octave Illusion") {
+                analysisHTML += `<em>Alternate between these notes rapidly to experience spatial confusion.</em>`;
+            } else {
+                analysisHTML += `<em>Experiment with these notes to experience the ${illusionType.toLowerCase()}.</em>`;
+            }
+
+            illusionAnalysis.innerHTML = analysisHTML;
+        }
+
+        function demonstrateGeometry(geometryType) {
+            const geometry = sacredGeometry[geometryType];
+            if (!geometry) return;
+
+            // Clear and select the pattern
+            clearAllSelections();
+
+            // Use sequence mode for patterns that show progression
+            const sequentialGeometry = ['Fibonacci Sequence', 'Phi Spiral', 'Dodecagon'];
+            const playMode = sequentialGeometry.includes(geometryType) ? 'sequence' : 'chord';
+            selectPattern(geometry.pattern, true, playMode);
+
+            // Update analysis display
+            let analysisHTML = `<strong>${geometryType}</strong><br><br>`;
+            analysisHTML += `<strong>Description:</strong> ${geometry.description}<br><br>`;
+            analysisHTML += `<strong>Significance:</strong> ${geometry.explanation}<br><br>`;
+            analysisHTML += `<strong>Musical Pattern:</strong> ${geometry.pattern.map(i => getCurrentNoteName(i)).join(', ')}<br><br>`;
+
+            // Add mathematical information
+            if (geometryType === "Golden Ratio (φ)") {
+                analysisHTML += `<strong>Mathematical Value:</strong> φ = 1.618033988...<br>`;
+                analysisHTML += `<strong>Formula:</strong> φ = (1 + √5) / 2<br>`;
+                analysisHTML += `<em>This interval ratio approximates the golden ratio in musical space.</em>`;
+            } else if (geometryType === "Fibonacci Sequence") {
+                analysisHTML += `<strong>Sequence:</strong> 1, 1, 2, 3, 5, 8, 13, 21, 34, 55...<br>`;
+                analysisHTML += `<em>Each note represents a Fibonacci number in semitone intervals.</em>`;
+            } else if (geometryType === "Vesica Piscis") {
+                analysisHTML += `<strong>Geometry:</strong> Two intersecting circles of equal radius<br>`;
+                analysisHTML += `<em>The octave relationship represents the sacred intersection.</em>`;
+            } else {
+                analysisHTML += `<em>This pattern reflects the geometric principles of ${geometryType.toLowerCase()}.</em>`;
+            }
+
+            geometryAnalysis.innerHTML = analysisHTML;
+        }
+
+        function demonstratePhysics(physicsType) {
+            const physics = resonancePhysics[physicsType];
+            if (!physics) return;
+
+            // Clear and select the pattern
+            clearAllSelections();
+
+            // Use sequence mode for harmonic series and formants
+            const sequentialPhysics = ['Harmonic Series', 'Formant Frequencies'];
+            const playMode = sequentialPhysics.includes(physicsType) ? 'sequence' : 'chord';
+            selectPattern(physics.pattern, true, playMode);
+
+            // Update analysis display
+            let analysisHTML = `<strong>${physicsType}</strong><br><br>`;
+            analysisHTML += `<strong>Description:</strong> ${physics.description}<br><br>`;
+            analysisHTML += `<strong>Physics:</strong> ${physics.explanation}<br><br>`;
+            analysisHTML += `<strong>Frequency Pattern:</strong> ${physics.pattern.map(i => getCurrentNoteName(i)).join(', ')}<br><br>`;
+
+            // Add specific physics information
+            if (physicsType === "Schumann Resonance") {
+                analysisHTML += `<strong>Frequency:</strong> 7.83 Hz (fundamental), 14.3, 20.8, 27.3, 33.8 Hz<br>`;
+                analysisHTML += `<em>These notes represent harmonic relationships to Earth's resonant frequency.</em>`;
+            } else if (physicsType === "Harmonic Series") {
+                analysisHTML += `<strong>Ratios:</strong> 1:1, 2:1, 3:2, 4:3, 5:4, 6:5...<br>`;
+                analysisHTML += `<em>Natural overtones that define musical harmony and timbre.</em>`;
+            } else if (physicsType === "Binaural Beats") {
+                analysisHTML += `<strong>Beat Frequency:</strong> Difference between the two tones<br>`;
+                analysisHTML += `<em>Brain synchronizes to the beat frequency, potentially altering consciousness.</em>`;
+            } else if (physicsType === "Solfeggio Frequencies") {
+                analysisHTML += `<strong>Frequencies:</strong> 396, 417, 528, 639, 741, 852 Hz<br>`;
+                analysisHTML += `<em>Ancient frequencies believed to have healing and spiritual properties.</em>`;
+            } else {
+                analysisHTML += `<em>This pattern demonstrates the physics of ${physicsType.toLowerCase()}.</em>`;
+            }
+
+            physicsAnalysis.innerHTML = analysisHTML;
+        }
+
+        function selectPattern(pattern, playAudio = false, playMode = 'chord') {
+            pattern.forEach(noteIndex => {
+                selectedNotes.add(noteIndex);
+                const noteNode = document.querySelector(`[data-note-index="${noteIndex}"]`);
+                if (noteNode) {
+                    noteNode.classList.add('selected');
+                }
+            });
+
+            if (playAudio) {
+                if (playMode === 'chord') {
+                    // Play all notes simultaneously
+                    pattern.forEach(noteIndex => {
+                        const noteName = getCurrentNoteName(noteIndex);
+                        setTimeout(() => playNoteSound(noteIndex, noteName), 100);
+                    });
+                } else if (playMode === 'sequence') {
+                    // Play notes in sequence
+                    pattern.forEach((noteIndex, i) => {
+                        const noteName = getCurrentNoteName(noteIndex);
+                        setTimeout(() => playNoteSound(noteIndex, noteName), 200 * i + 100);
+                    });
+                }
+            }
+
+            updateVisualization();
+            updateInfoDisplay();
+            updateKeyAnalysis();
+        }
+
+        function clearAllSelections() {
+            selectedNotes.clear();
+            document.querySelectorAll('.note-node.selected').forEach(node => {
+                node.classList.remove('selected');
+            });
+            // Stop all sounds
+            activeOscillators.forEach(instrument => {
+                instrument.oscillators.forEach(osc => {
+                    try { osc.stop(); osc.disconnect(); } catch (e) { }
+                });
+                instrument.gains.forEach(gain => {
+                    try { gain.disconnect(); } catch (e) { }
+                });
+            });
+            activeOscillators.clear();
+            updateVisualization();
+        }
+
+        // Pattern Sequencer Functions
+        function toggleSequencer() {
+            try {
+                sequencerEnabled = !sequencerEnabled;
+                console.log('Sequencer toggled:', sequencerEnabled);
+
+                if (sequencerEnabled) {
+                    sequencerToggle.textContent = 'Disable Sequencer';
+                    sequencerToggle.classList.add('active');
+                    sequencerPanel.style.display = 'block';
+                    initializePatternGrid();
+                    console.log('Sequencer enabled and panel shown');
+                } else {
+                    sequencerToggle.textContent = 'Enable Sequencer';
+                    sequencerToggle.classList.remove('active');
+                    sequencerPanel.style.display = 'none';
+                    stopPlayback();
+                    console.log('Sequencer disabled and panel hidden');
+                }
+            } catch (error) {
+                console.error('Error toggling sequencer:', error);
+            }
+        }
+
+        function initializePatternGrid() {
+            updateAvailableNotes();
+            createPatternGrid();
+        }
+
+        function updateAvailableNotes() {
+            const numNotes = currentCircleType === '12-tone' ? 12 :
+                currentCircleType === '24-tone' ? 24 :
+                    currentCircleType === 'harmonic' ? 16 : 12;
+
+            availableNotes = [];
+            for (let i = 0; i < Math.min(numNotes, 12); i++) { // Limit to 12 rows for UI
+                availableNotes.push({
+                    index: i,
+                    name: getCurrentNoteName(i)
+                });
+            }
+
+            // Initialize pattern grid
+            patternGrid = [];
+            for (let note = 0; note < availableNotes.length; note++) {
+                patternGrid[note] = new Array(currentSteps).fill(false);
+            }
+        }
+
+        function createPatternGrid() {
+            try {
+                if (!patternGridContainer) {
+                    console.error('Pattern grid container not found');
+                    return;
+                }
+
+                patternGridContainer.innerHTML = '';
+
+                // Set grid template
+                patternGridContainer.style.gridTemplateColumns = `80px repeat(${currentSteps}, 1fr)`;
+
+                // Create step indicator
+                const stepIndicator = document.createElement('div');
+                stepIndicator.className = 'step-indicator';
+                stepIndicator.style.gridColumn = `1 / ${currentSteps + 2}`;
+                patternGridContainer.appendChild(stepIndicator);
+
+                // Create pattern rows
+                availableNotes.forEach((note, noteIndex) => {
+                    // Note label
+                    const label = document.createElement('div');
+                    label.className = 'pattern-label';
+                    label.textContent = note.name;
+                    patternGridContainer.appendChild(label);
+
+                    // Pattern steps
+                    for (let step = 0; step < currentSteps; step++) {
+                        const stepElement = document.createElement('div');
+                        stepElement.className = 'pattern-step';
+                        stepElement.dataset.note = noteIndex;
+                        stepElement.dataset.step = step;
+
+                        stepElement.addEventListener('click', () => {
+                            togglePatternStep(noteIndex, step);
+                        });
+
+                        patternGridContainer.appendChild(stepElement);
+                    }
+                });
+
+                console.log('Pattern grid created with', availableNotes.length, 'notes and', currentSteps, 'steps');
+            } catch (error) {
+                console.error('Error creating pattern grid:', error);
+            }
+        }
+
+        function togglePatternStep(noteIndex, step) {
+            patternGrid[noteIndex][step] = !patternGrid[noteIndex][step];
+            updatePatternDisplay();
+        }
+
+        function updatePatternDisplay() {
+            availableNotes.forEach((note, noteIndex) => {
+                for (let step = 0; step < currentSteps; step++) {
+                    const stepElement = document.querySelector(`[data-note="${noteIndex}"][data-step="${step}"]`);
+                    if (stepElement) {
+                        if (patternGrid[noteIndex][step]) {
+                            stepElement.classList.add('active');
+                        } else {
+                            stepElement.classList.remove('active');
+                        }
+                    }
+                }
+            });
+        }
+
+        function startPlayback() {
+            if (isPlaying) {
+                stopPlayback();
+                return;
+            }
+
+            isPlaying = true;
+            currentStep = 0;
+
+            playBtn.classList.add('active');
+            playBtn.textContent = '⏸ Pause';
+
+            const stepDuration = (60 / currentTempo / 4) * 1000; // 16th notes
+
+            playbackInterval = setInterval(() => {
+                playCurrentStep();
+                currentStep = (currentStep + 1) % currentSteps;
+                updateStepIndicator();
+            }, stepDuration);
+        }
+
+        function stopPlayback() {
+            if (!isPlaying) return;
+
+            isPlaying = false;
+            currentStep = 0;
+
+            if (playbackInterval) {
+                clearInterval(playbackInterval);
+                playbackInterval = null;
+            }
+
+            // Stop all active sounds
+            activeOscillators.forEach(instrument => {
+                instrument.oscillators.forEach(osc => {
+                    try { osc.stop(); osc.disconnect(); } catch (e) { }
+                });
+                instrument.gains.forEach(gain => {
+                    try { gain.disconnect(); } catch (e) { }
+                });
+            });
+            activeOscillators.clear();
+
+            playBtn.classList.remove('active');
+            playBtn.textContent = '▶ Play';
+
+            // Clear step indicators
+            document.querySelectorAll('.pattern-step.playing').forEach(step => {
+                step.classList.remove('playing');
+            });
+            updateStepIndicator();
+        }
+
+        function playCurrentStep() {
+            // Clear previous playing indicators
+            document.querySelectorAll('.pattern-step.playing').forEach(step => {
+                step.classList.remove('playing');
+            });
+
+            // Play notes for current step
+            availableNotes.forEach((note, noteIndex) => {
+                if (patternGrid[noteIndex][currentStep]) {
+                    const stepElement = document.querySelector(`[data-note="${noteIndex}"][data-step="${currentStep}"]`);
+                    if (stepElement) {
+                        stepElement.classList.add('playing');
+                    }
+
+                    if (chordMode && sequencerChords[noteIndex]) {
+                        // Play chord
+                        const chord = sequencerChords[noteIndex];
+                        chord.notes.forEach(noteIndex => {
+                            const noteName = getCurrentNoteName(noteIndex);
+                            playNoteSound(noteIndex, noteName);
+
+                            // Auto-stop after short duration
+                            setTimeout(() => {
+                                stopNoteSound(noteName);
+                            }, 400);
+                        });
+                    } else {
+                        // Play single note
+                        playNoteSound(note.index, note.name);
+
+                        // Auto-stop after short duration
+                        setTimeout(() => {
+                            stopNoteSound(note.name);
+                        }, 200);
+                    }
+                }
+            });
+        }
+
+        function updateStepIndicator() {
+            const indicator = document.querySelector('.step-indicator::before');
+            if (indicator) {
+                const percentage = (currentStep / currentSteps) * 100;
+                indicator.style.left = `${percentage}%`;
+            }
+        }
+
+        function clearPattern() {
+            stopPlayback();
+            patternGrid = [];
+            availableNotes.forEach((note, noteIndex) => {
+                patternGrid[noteIndex] = new Array(currentSteps).fill(false);
+            });
+            updatePatternDisplay();
+        }
+
+        function handleTempoChange() {
+            currentTempo = parseInt(tempoSlider.value);
+            tempoDisplay.textContent = currentTempo;
+        }
+
+        function handleStepsChange() {
+            currentSteps = parseInt(stepsSlider.value);
+            stepsDisplay.textContent = currentSteps;
+            if (sequencerEnabled) {
+                initializePatternGrid();
+            }
+        }
+
+        // Chord Mode Functions
+        function toggleChordMode() {
+            chordMode = !chordMode;
+            const chordModeBtn = document.getElementById('chord-mode-btn');
+
+            if (chordMode) {
+                chordModeBtn.textContent = 'Note Mode';
+                chordModeBtn.classList.add('active');
+                initializeChordMode();
+            } else {
+                chordModeBtn.textContent = 'Chord Mode';
+                chordModeBtn.classList.remove('active');
+                initializePatternGrid();
+            }
+        }
+
+        function initializeChordMode() {
+            // Initialize chord data for each row
+            sequencerChords = [];
+            availableNotes.forEach((note, index) => {
+                sequencerChords[index] = {
+                    type: 'major',
+                    root: note.index,
+                    notes: getChordNotes(note.index, 'major')
+                };
+            });
+            createChordPatternGrid();
+        }
+
+        function createChordPatternGrid() {
+            try {
+                if (!patternGridContainer) {
+                    console.error('Pattern grid container not found');
+                    return;
+                }
+
+                patternGridContainer.innerHTML = '';
+                patternGridContainer.style.gridTemplateColumns = `120px 80px repeat(${currentSteps}, 1fr)`;
+
+                // Create step indicator
+                const stepIndicator = document.createElement('div');
+                stepIndicator.className = 'step-indicator';
+                stepIndicator.style.gridColumn = `1 / ${currentSteps + 3}`;
+                patternGridContainer.appendChild(stepIndicator);
+
+                // Create pattern rows for each chord
+                availableNotes.forEach((note, noteIndex) => {
+                    // Chord selector
+                    const chordSelector = document.createElement('select');
+                    chordSelector.className = 'pattern-label';
+                    chordSelector.style.fontSize = '0.7em';
+                    chordSelector.innerHTML = `
+                        <option value="major">Maj</option>
+                        <option value="minor">min</option>
+                        <option value="dominant7">7</option>
+                        <option value="minor7">m7</option>
+                        <option value="major7">maj7</option>
+                        <option value="diminished">dim</option>
+                        <option value="augmented">aug</option>
+                    `;
+                    chordSelector.addEventListener('change', (e) => updateChordType(noteIndex, e.target.value));
+                    patternGridContainer.appendChild(chordSelector);
+
+                    // Chord name display
+                    const chordName = document.createElement('div');
+                    chordName.className = 'pattern-label';
+                    chordName.textContent = `${note.name}maj`;
+                    chordName.id = `chord-name-${noteIndex}`;
+                    patternGridContainer.appendChild(chordName);
+
+                    // Pattern steps
+                    for (let step = 0; step < currentSteps; step++) {
+                        const stepElement = document.createElement('div');
+                        stepElement.className = 'pattern-step';
+                        stepElement.dataset.note = noteIndex;
+                        stepElement.dataset.step = step;
+
+                        stepElement.addEventListener('click', () => {
+                            togglePatternStep(noteIndex, step);
+                        });
+
+                        patternGridContainer.appendChild(stepElement);
+                    }
+                });
+
+                console.log('Chord pattern grid created');
+            } catch (error) {
+                console.error('Error creating chord pattern grid:', error);
+            }
+        }
+
+        function updateChordType(noteIndex, chordType) {
+            sequencerChords[noteIndex].type = chordType;
+            sequencerChords[noteIndex].notes = getChordNotes(sequencerChords[noteIndex].root, chordType);
+
+            const chordNameElement = document.getElementById(`chord-name-${noteIndex}`);
+            const noteName = getCurrentNoteName(sequencerChords[noteIndex].root);
+            const chordSymbol = getChordSymbol(chordType);
+            chordNameElement.textContent = `${noteName}${chordSymbol}`;
+        }
+
+        function getChordNotes(root, chordType) {
+            const intervals = chordTypes[chordType] || chordTypes.major;
+            return intervals.map(interval => (root + interval) % 12);
+        }
+
+        function getChordSymbol(chordType) {
+            const symbols = {
+                major: 'maj',
+                minor: 'min',
+                dominant7: '7',
+                minor7: 'm7',
+                major7: 'maj7',
+                diminished: 'dim',
+                augmented: 'aug'
+            };
+            return symbols[chordType] || 'maj';
+        }
+
+        function generateProgression(progressionName) {
+            try {
+                const progression = chordProgressions[progressionName];
+                const keySelect = document.getElementById('progression-key');
+                const key = parseInt(keySelect.value);
+
+                if (!progression) return;
+
+                // Clear current pattern
+                clearPattern();
+
+                // Enable chord mode if not already enabled
+                if (!chordMode) {
+                    toggleChordMode();
+                }
+
+                // Set up the progression in the first few rows
+                progression.forEach((degree, index) => {
+                    if (index < availableNotes.length) {
+                        const chordRoot = (key + degree) % 12;
+                        const chordType = getChordTypeForDegree(degree, currentKeyMode);
+
+                        // Update the chord for this row
+                        sequencerChords[index] = {
+                            type: chordType,
+                            root: chordRoot,
+                            notes: getChordNotes(chordRoot, chordType)
+                        };
+
+                        // Update the UI
+                        const chordSelector = patternGridContainer.children[index * (currentSteps + 2) + 1];
+                        if (chordSelector && chordSelector.tagName === 'SELECT') {
+                            chordSelector.value = chordType;
+                        }
+                        updateChordType(index, chordType);
+
+                        // Activate every 4th step for a basic rhythm
+                        for (let step = 0; step < currentSteps; step += 4) {
+                            patternGrid[index][step] = true;
+                        }
+                    }
+                });
+
+                updatePatternDisplay();
+                console.log(`Generated ${progressionName} progression in key of ${getCurrentNoteName(key)}`);
+            } catch (error) {
+                console.error('Error generating progression:', error);
+            }
+        }
+
+        function getChordTypeForDegree(degree, keyMode) {
+            const chordMap = scaleChords[keyMode] || scaleChords.major;
+            return chordMap[degree] || 'major';
+        }
+
+        // Record Looper Functions
+        function startRecording() {
+            if (isRecording) {
+                stopRecording();
+                return;
+            }
+
+            isRecording = true;
+            recordedLoop = [];
+            loopStartTime = getAudioContext().currentTime;
+
+            recordBtn.classList.add('recording');
+            recordBtn.textContent = '⏹ Stop Rec';
+
+            updateLoopDisplay('Recording... Play notes on the circle');
+            startLoopProgress();
+        }
+
+        function stopRecording() {
+            if (!isRecording) return;
+
+            isRecording = false;
+            recordBtn.classList.remove('recording');
+            recordBtn.textContent = '● Record';
+
+            if (recordedLoop.length > 0) {
+                updateLoopDisplay(`Recorded ${recordedLoop.length} notes. Click Play Loop to hear it.`);
+            } else {
+                updateLoopDisplay('No notes recorded. Try recording again.');
+            }
+
+            stopLoopProgress();
+        }
+
+        function startLoopPlayback() {
+            if (isLoopPlaying) {
+                stopLoopPlayback();
+                return;
+            }
+
+            if (recordedLoop.length === 0) {
+                updateLoopDisplay('No loop recorded. Record some notes first.');
+                return;
+            }
+
+            isLoopPlaying = true;
+            loopPlayBtn.classList.add('playing');
+            loopPlayBtn.textContent = '⏸ Pause';
+
+            playRecordedLoop();
+            startLoopProgress();
+        }
+
+        function stopLoopPlayback() {
+            if (!isLoopPlaying) return;
+
+            isLoopPlaying = false;
+            loopPlayBtn.classList.remove('playing');
+            loopPlayBtn.textContent = '▶ Play Loop';
+
+            if (loopPlaybackInterval) {
+                clearInterval(loopPlaybackInterval);
+                loopPlaybackInterval = null;
+            }
+
+            // Reset all note states
+            recordedLoop.forEach(note => {
+                note.played = false;
+                note.lastPlayed = 0;
+            });
+
+            stopLoopProgress();
+            stopAllLoopSounds();
+        }
+
+        function playRecordedLoop() {
+            if (recordedLoop.length === 0) return;
+
+            const loopDuration = (loopLength * 60 / currentTempo) * 1000; // Convert beats to milliseconds
+            let loopStartTime = Date.now();
+
+            function playLoop() {
+                // Check if we should still be playing
+                if (!isLoopPlaying) {
+                    return;
+                }
+
+                const currentTime = Date.now() - loopStartTime;
+                const normalizedTime = (currentTime % loopDuration) / loopDuration;
+
+                recordedLoop.forEach(note => {
+                    const noteTime = note.time;
+                    const timeDiff = Math.abs(normalizedTime - noteTime);
+
+                    // Play note if we're close to its time (within 50ms tolerance)
+                    if (timeDiff < 0.05 || timeDiff > 0.95) {
+                        if (!note.played || (Date.now() - note.lastPlayed) > 100) {
+                            playNoteSound(note.noteIndex, note.noteName);
+                            note.played = true;
+                            note.lastPlayed = Date.now();
+
+                            // Auto-stop after duration
+                            setTimeout(() => {
+                                if (isLoopPlaying) { // Only stop if still playing
+                                    stopNoteSound(note.noteName);
+                                }
+                                note.played = false;
+                            }, note.duration || 200);
+                        }
+                    }
+                });
+            }
+
+            // Play immediately and then set interval
+            playLoop();
+            loopPlaybackInterval = setInterval(playLoop, 50); // Check every 50ms for smooth playback
+        }
+
+        function startOverdub() {
+            if (!isLoopPlaying) {
+                updateLoopDisplay('Start loop playback first to overdub');
+                return;
+            }
+
+            isOverdubbing = !isOverdubbing;
+
+            if (isOverdubbing) {
+                overdubBtn.classList.add('active');
+                overdubBtn.textContent = '⏹ Stop Overdub';
+                updateLoopDisplay('Overdubbing... Play notes to add to the loop');
+            } else {
+                overdubBtn.classList.remove('active');
+                overdubBtn.textContent = '+ Overdub';
+                updateLoopDisplay('Overdub stopped');
+            }
+        }
+
+        function clearLoop() {
+            stopLoopPlayback();
+            stopRecording();
+
+            recordedLoop = [];
+            isOverdubbing = false;
+
+            overdubBtn.classList.remove('active');
+            overdubBtn.textContent = '+ Overdub';
+
+            updateLoopDisplay('Loop cleared. Click Record to create a new loop');
+            stopLoopProgress();
+        }
+
+        function recordNote(noteIndex, noteName) {
+            if (!isRecording && !isOverdubbing) return;
+
+            const currentTime = getAudioContext().currentTime;
+            const relativeTime = ((currentTime - loopStartTime) % (loopLength * 60 / currentTempo));
+            const normalizedTime = relativeTime / (loopLength * 60 / currentTempo);
+
+            let quantizedTime = normalizedTime;
+
+            // Apply quantization
+            if (currentQuantize !== 'off') {
+                const quantizeValue = parseFloat(currentQuantize.split('/')[1]);
+                const quantizeStep = 1 / (quantizeValue * loopLength);
+                quantizedTime = Math.round(normalizedTime / quantizeStep) * quantizeStep;
+            }
+
+            const noteData = {
+                noteIndex: noteIndex,
+                noteName: noteName,
+                time: quantizedTime,
+                duration: 200,
+                played: false,
+                lastPlayed: 0
+            };
+
+            recordedLoop.push(noteData);
+
+            // Sort by time for better playback
+            recordedLoop.sort((a, b) => a.time - b.time);
+
+            updateLoopDisplay(`${recordedLoop.length} notes in loop`);
+        }
+
+        function updateLoopDisplay(message) {
+            loopDisplay.textContent = message;
+        }
+
+        function startLoopProgress() {
+            if (loopProgressInterval) {
+                clearInterval(loopProgressInterval);
+            }
+
+            const updateProgress = () => {
+                if (isRecording || isLoopPlaying) {
+                    const currentTime = getAudioContext().currentTime;
+                    const elapsed = (currentTime - loopStartTime) % (loopLength * 60 / currentTempo);
+                    const progress = (elapsed / (loopLength * 60 / currentTempo)) * 100;
+                    loopProgress.style.width = `${progress}%`;
+                } else {
+                    loopProgress.style.width = '0%';
+                }
+            };
+
+            updateProgress();
+            loopProgressInterval = setInterval(updateProgress, 50);
+        }
+
+        function stopLoopProgress() {
+            if (loopProgressInterval) {
+                clearInterval(loopProgressInterval);
+                loopProgressInterval = null;
+            }
+            loopProgress.style.width = '0%';
+        }
+
+        function stopAllLoopSounds() {
+            // Stop any active oscillators from the loop
+            activeOscillators.forEach(instrument => {
+                instrument.oscillators.forEach(osc => {
+                    try { osc.stop(); osc.disconnect(); } catch (e) { }
+                });
+                instrument.gains.forEach(gain => {
+                    try { gain.disconnect(); } catch (e) { }
+                });
+            });
+            activeOscillators.clear();
+        }
+
+        function handleLoopLengthChange() {
+            loopLength = parseInt(loopLengthSlider.value);
+            loopLengthDisplay.textContent = loopLength;
+
+            if (isRecording || isLoopPlaying) {
+                // Restart timing with new length
+                loopStartTime = getAudioContext().currentTime;
+            }
+        }
+
+        function handleQuantizeChange() {
+            currentQuantize = quantizeSelect.value;
+        }
+
+        // Initialization
+        window.onload = () => {
+            try {
+                createNoteNodes();
+                createChordButtons();
+                createEducationalPanels();
+
+                resetButton.addEventListener('click', handleReset);
+                circleTypeSelect.addEventListener('change', handleCircleTypeChange);
+                displayModeSelect.addEventListener('change', handleDisplayModeChange);
+                keyModeSelect.addEventListener('change', handleKeyModeChange);
+                instrumentSelect.addEventListener('change', handleInstrumentChange);
+
+                // Sequencer event listeners
+                sequencerToggle.addEventListener('click', toggleSequencer);
+                playBtn.addEventListener('click', startPlayback);
+                stopBtn.addEventListener('click', stopPlayback);
+                clearBtn.addEventListener('click', clearPattern);
+                document.getElementById('chord-mode-btn').addEventListener('click', toggleChordMode);
+                tempoSlider.addEventListener('input', handleTempoChange);
+                stepsSlider.addEventListener('input', handleStepsChange);
+
+                // Looper event listeners
+                recordBtn.addEventListener('click', startRecording);
+                loopPlayBtn.addEventListener('click', startLoopPlayback);
+                loopStopBtn.addEventListener('click', stopLoopPlayback);
+                loopClearBtn.addEventListener('click', clearLoop);
+                overdubBtn.addEventListener('click', startOverdub);
+                loopLengthSlider.addEventListener('input', handleLoopLengthChange);
+                quantizeSelect.addEventListener('change', handleQuantizeChange);
+
+                let resizeTimer;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(updateVisualization, 100);
+                });
+
+                console.log('Circle of Fifths Explorer initialized successfully');
+            } catch (error) {
+                console.error('Error during initialization:', error);
+            }
+        };
+
+        // Make generateProgression globally accessible for onclick handlers
+        window.generateProgression = generateProgression;
+    </script>
+</body>
+
+</html>
